@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://cgvtoqoyovu4y"]
+
+[ext_resource type="Script" uid="uid://dv5mg4akadtnp" path="res://scripts/characters/base_character.gd" id="1_base"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
+radius = 0.35
+height = 1.4
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_body"]
+radius = 0.35
+height = 1.4
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_attack"]
+size = Vector3(0.7, 0.56, 1.0)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hurt"]
+radius = 0.368
+height = 1.4
+
+[node name="BaseCharacter" type="CharacterBody3D"]
+script = ExtResource("1_base")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.7, 0)
+shape = SubResource("CapsuleShape3D_body")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.7, 0)
+mesh = SubResource("CapsuleMesh_body")
+
+[node name="AttackHitbox" type="Area3D" parent="."]
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="AttackHitbox"]
+disabled = true
+scale = Vector3(1, 1, 0.1)
+shape = SubResource("BoxShape3D_attack")
+
+[node name="HurtBox" type="Area3D" parent="."]
+position = Vector3(0, 0.7, 0)
+monitoring = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HurtBox"]
+scale = Vector3(1, 1, 0.1)
+shape = SubResource("CapsuleShape3D_hurt")
