@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://enc7n8w2j4hb"]
+[gd_scene load_steps=7 format=3 uid="uid://enc7n8w2j4hb"]
 
 [ext_resource type="PackedScene" uid="uid://cgvtoqoyovu4y" path="res://scenes/characters/base_character.tscn" id="1_char"]
 [ext_resource type="Script" uid="uid://lb7iqseesw74" path="res://scripts/systems/game_scene.gd" id="2_game_scene"]
+[ext_resource type="Script" uid="uid://kmsarfbhvy3g" path="res://scripts/systems/camera_controller.gd" id="3_cam"]
 
 [sub_resource type="Environment" id="Environment_1"]
 ambient_light_source = 2
@@ -26,6 +27,7 @@ transform = Transform3D(1, 0, 0, 0, 0.7071069, 0.70710665, 0, -0.70710665, 0.707
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.98480827, 0.1736453, 0, -0.1736453, 0.98480827, 0, 2, 8)
 fov = 60.0
+script = ExtResource("3_cam")
 
 [node name="Platform" type="StaticBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
