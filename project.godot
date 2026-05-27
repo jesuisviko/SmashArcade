@@ -19,6 +19,8 @@ config/run/main_scene="res://scenes/game.tscn"
 [autoload]
 
 InputManager="*res://scripts/systems/input_manager.gd"
+CombatSystem="*res://scripts/systems/combat_system.gd"
+GameManager="*res://scripts/systems/game_manager.gd"
 
 [input]
 
