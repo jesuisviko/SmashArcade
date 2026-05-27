@@ -224,7 +224,13 @@ func _update_state(input: Dictionary) -> void:
 func _set_state(new_state: State) -> void:
 	if new_state == state:
 		return
-	if debug_mode:
+	if debug_mode and new_state in [
+		State.ATTACK_LIGHT,     State.ATTACK_STRONG,
+		State.ATTACK_UP,        State.ATTACK_DOWN,
+		State.ATTACK_AIR_LIGHT, State.ATTACK_AIR_STRONG,
+		State.ATTACK_AIR_UP,    State.ATTACK_AIR_DOWN,
+		State.PARRY,
+	]:
 		print("[P%d] %s → %s" % [player_id, State.find_key(state), State.find_key(new_state)])
 	state = new_state
 
@@ -237,8 +243,6 @@ func jump() -> void:
 	velocity.y = JUMP_SPEED
 	jumps_left -= 1
 	_set_state(State.JUMP)
-	if debug_mode:
-		print("[P%d] JUMP (sauts restants: %d)" % [player_id, jumps_left])
 
 
 # Appelé par combat_system

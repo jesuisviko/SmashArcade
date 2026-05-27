@@ -1,7 +1,7 @@
 [gd_scene load_steps=6 format=3 uid="uid://enc7n8w2j4hb"]
 
 [ext_resource type="PackedScene" uid="uid://cgvtoqoyovu4y" path="res://scenes/characters/base_character.tscn" id="1_char"]
-[ext_resource type="Script" path="res://scripts/systems/game_scene.gd" id="2_game_scene"]
+[ext_resource type="Script" uid="uid://lb7iqseesw74" path="res://scripts/systems/game_scene.gd" id="2_game_scene"]
 
 [sub_resource type="Environment" id="Environment_1"]
 ambient_light_source = 2
@@ -43,3 +43,4 @@ debug_mode = true
 [node name="Player2" parent="." instance=ExtResource("1_char")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 0)
 player_id = 2
+debug_mode = true
