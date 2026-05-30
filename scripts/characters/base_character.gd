@@ -4,7 +4,7 @@ enum State {
 	IDLE, RUN, JUMP, FALL,
 	ATTACK_LIGHT, ATTACK_STRONG, ATTACK_UP, ATTACK_DOWN,
 	ATTACK_AIR_LIGHT, ATTACK_AIR_STRONG, ATTACK_AIR_UP, ATTACK_AIR_DOWN,
-	PARRY, HITSTUN,
+	PARRY, HITSTUN, RESPAWNING,
 }
 
 const GRAVITY    := 32.0
@@ -38,6 +38,8 @@ var _parry_timer     : float = 0.0
 var _parry_cd_timer  : float = 0.0
 var _hitstun_timer         : float = 0.0
 var _post_hitstun_grace    : float = 0.0
+var _respawn_timer         : float = 0.0
+var _blink_timer           : float = 0.0
 
 # Meshes de debug (créés uniquement si debug_mode = true)
 var _debug_attack_mesh : MeshInstance3D = null
@@ -157,6 +159,15 @@ func _tick_timers(delta: float) -> void:
 		if _hitstun_timer <= 0.0 and state == State.HITSTUN:
 			_end_hitstun()
 
+	if state == State.RESPAWNING:
+		_respawn_timer -= delta
+		_blink_timer   -= delta
+		if _blink_timer <= 0.0:
+			_mesh.visible = not _mesh.visible
+			_blink_timer  = 0.1
+		if _respawn_timer <= 0.0:
+			_end_respawning()
+
 
 func _end_hitstun() -> void:
 	# velocity intentionnellement non modifiée — le momentum est conservé
@@ -164,10 +175,17 @@ func _end_hitstun() -> void:
 	_set_state(State.JUMP if velocity.y > 0.0 else State.FALL)
 
 
+func _end_respawning() -> void:
+	is_invincible  = false
+	_respawn_timer = 0.0
+	_mesh.visible  = true
+	_set_state(State.FALL)
+
+
 # ─── Gestion des attaques ────────────────────────────────────────────────────
 
 func _handle_attack_input(input: Dictionary) -> void:
-	if state == State.HITSTUN or _is_attacking() or state == State.PARRY:
+	if state == State.HITSTUN or _is_attacking() or state == State.PARRY or state == State.RESPAWNING:
 		return
 
 	if input["attack_light"]:
@@ -258,6 +276,10 @@ func _end_parry() -> void:
 # ─── Physique ────────────────────────────────────────────────────────────────
 
 func _apply_gravity(delta: float) -> void:
+	if state == State.RESPAWNING:
+		velocity.y = 0.0
+		velocity.x = 0.0
+		return
 	if state == State.HITSTUN:
 		velocity.y -= 4.0 * delta              # gravité réduite pendant le vol
 		velocity.x  = lerp(velocity.x, 0.0, 0.015)  # décélération horizontale douce
@@ -270,7 +292,7 @@ func _apply_gravity(delta: float) -> void:
 
 
 func _apply_movement(input: Dictionary, delta: float) -> void:
-	if state == State.HITSTUN or _is_attacking() or state == State.PARRY:
+	if state == State.HITSTUN or _is_attacking() or state == State.PARRY or state == State.RESPAWNING:
 		_up_was_pressed = input["up"]
 		return
 
@@ -294,6 +316,12 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 # ─── State machine ───────────────────────────────────────────────────────────
 
 func _update_state(input: Dictionary) -> void:
+	if state == State.RESPAWNING:
+		var any_input: bool = (input["left"] or input["right"] or input["up"] or input["down"]
+				or input["attack_light"] or input["attack_strong"] or input["parry"])
+		if any_input:
+			_end_respawning()
+		return
 	if _is_attacking() or state == State.HITSTUN or state == State.PARRY:
 		return
 	var has_h_input: bool = input["left"] or input["right"]
@@ -406,3 +434,11 @@ func die() -> void:
 	is_dead = true
 	if debug_mode:
 		print("[P%d] DEAD" % player_id)
+
+
+func start_respawn_invincibility(duration: float) -> void:
+	is_invincible  = true
+	velocity       = Vector3.ZERO
+	_respawn_timer = duration
+	_blink_timer   = 0.1
+	_set_state(State.RESPAWNING)

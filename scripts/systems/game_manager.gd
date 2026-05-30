@@ -15,6 +15,10 @@ const SPAWN_POSITIONS := {
 	1: Vector3(-3.0, 2.0, 0.0),
 	2: Vector3( 3.0, 2.0, 0.0),
 }
+const RESPAWN_POSITIONS := {
+	1: Vector3(-3.0, 4.0, 0.0),
+	2: Vector3( 3.0, 4.0, 0.0),
+}
 
 
 # ─── Enregistrement ──────────────────────────────────────────────────────────
@@ -39,13 +43,42 @@ func respawn(player_id: int) -> void:
 	if not players.has(player_id):
 		return
 	var player: CharacterBody3D = players[player_id]
-	player.global_position = SPAWN_POSITIONS[player_id]
-	player.velocity        = Vector3.ZERO
-	player.damage_percent  = 0.0
-	player.is_dead         = false
+
+	# Téléporte hors écran et désactive la physique
+	player.global_position    = Vector3(0.0, -50.0, 0.0)
+	player.set_physics_process(false)
+	player.visible            = false
+
+	# Attendre 2 secondes réelles
+	await get_tree().create_timer(2.0).timeout
+	if not is_instance_valid(player) or game_state != "fighting":
+		return
+
+	# Reset rapide de la caméra en 0.5s
+	var cam: Camera3D = get_tree().get_first_node_in_group("camera")
+	if cam and cam.has_method("reset_to_origin_quick"):
+		cam.reset_to_origin_quick(0.5)
+
+	# Attendre 0.5 secondes pendant le reset caméra
+	await get_tree().create_timer(0.5).timeout
+	if not is_instance_valid(player) or game_state != "fighting":
+		return
+
+	# Repositionne au point de respawn aérien
+	player.global_position    = RESPAWN_POSITIONS[player_id]
+	player.velocity           = Vector3.ZERO
+	player.damage_percent     = 0.0
+	player.is_dead            = false
+	player.visible            = true
+	player.set_physics_process(true)
+
+	# Invincibilité de respawn
+	if player.has_method("start_respawn_invincibility"):
+		player.start_respawn_invincibility(4.0)
 
 
 func reset() -> void:
+	Engine.time_scale = 1.0
 	game_state = "fighting"
 	stocks     = {1: 3, 2: 3}
 	players    = {}
@@ -54,4 +87,10 @@ func reset() -> void:
 func game_over(loser_id: int) -> void:
 	game_state = "game_over"
 	winner_id  = 2 if loser_id == 1 else 1
+	var cam: Camera3D = get_tree().get_first_node_in_group("camera")
+	if cam and cam.has_method("reset_to_origin"):
+		cam.reset_to_origin()
+	Engine.time_scale = 0.2
+	await get_tree().create_timer(4.0 * Engine.time_scale).timeout
+	Engine.time_scale = 1.0
 	get_tree().change_scene_to_file("res://scenes/ui/game_over.tscn")
