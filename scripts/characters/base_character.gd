@@ -4,7 +4,7 @@ enum State {
 	IDLE, RUN, JUMP, FALL,
 	ATTACK_LIGHT, ATTACK_STRONG, ATTACK_UP, ATTACK_DOWN,
 	ATTACK_AIR_LIGHT, ATTACK_AIR_STRONG, ATTACK_AIR_UP, ATTACK_AIR_DOWN,
-	PARRY, HITSTUN, RESPAWNING,
+	PARRY, HITSTUN, RESPAWNING, CROUCH,
 }
 
 const GRAVITY    := 32.0
@@ -40,6 +40,7 @@ var _hitstun_timer         : float = 0.0
 var _post_hitstun_grace    : float = 0.0
 var _respawn_timer         : float = 0.0
 var _blink_timer           : float = 0.0
+var _soft_drop_timer       : float = 0.0
 
 # Meshes de debug (créés uniquement si debug_mode = true)
 var _debug_attack_mesh : MeshInstance3D = null
@@ -87,9 +88,9 @@ func _apply_size() -> void:
 	attack_box.size = Vector3(char_radius * 2.0, char_height * 0.4, 1.0)
 	_attack_shape.shape = attack_box
 
-	# Les joueurs se traversent — ils ne détectent que le layer des plateformes
+	# Les joueurs se traversent — ils ne détectent que les layers des plateformes
 	collision_layer = 1
-	collision_mask  = 2
+	collision_mask  = 6   # layer 2 (hard) | layer 4 (soft) = 2 + 4
 
 	if debug_mode:
 		_setup_debug_meshes()
@@ -133,6 +134,7 @@ func _physics_process(delta: float) -> void:
 	_handle_attack_input(input)
 	_apply_gravity(delta)
 	_apply_movement(input, delta)
+	_update_soft_collision()   # masque collision avant move_and_slide
 	move_and_slide()
 	position.z = 0.0           # axe Z verrouillé en permanence
 	_update_state(input)
@@ -158,6 +160,9 @@ func _tick_timers(delta: float) -> void:
 		_hitstun_timer -= delta
 		if _hitstun_timer <= 0.0 and state == State.HITSTUN:
 			_end_hitstun()
+
+	if _soft_drop_timer > 0.0:
+		_soft_drop_timer -= delta
 
 	if state == State.RESPAWNING:
 		_respawn_timer -= delta
@@ -292,7 +297,8 @@ func _apply_gravity(delta: float) -> void:
 
 
 func _apply_movement(input: Dictionary, delta: float) -> void:
-	if state == State.HITSTUN or _is_attacking() or state == State.PARRY or state == State.RESPAWNING:
+	if state == State.HITSTUN or _is_attacking() or state == State.PARRY \
+			or state == State.RESPAWNING or state == State.CROUCH:
 		_up_was_pressed = input["up"]
 		return
 
@@ -324,10 +330,18 @@ func _update_state(input: Dictionary) -> void:
 		return
 	if _is_attacking() or state == State.HITSTUN or state == State.PARRY:
 		return
+	# CROUCH : maintenu tant que down est pressé et qu'on est au sol
+	if state == State.CROUCH:
+		if not input["down"] or not is_on_floor():
+			_set_state(State.IDLE)
+		return
 	var has_h_input: bool = input["left"] or input["right"]
 	var new_state: State  = State.IDLE
 	if is_on_floor():
-		new_state = State.RUN if has_h_input else State.IDLE
+		if input["down"]:
+			new_state = State.CROUCH
+		elif has_h_input:
+			new_state = State.RUN
 	else:
 		new_state = State.JUMP if velocity.y > 0.0 else State.FALL
 	_set_state(new_state)
@@ -336,6 +350,10 @@ func _update_state(input: Dictionary) -> void:
 func _set_state(new_state: State) -> void:
 	if new_state == state:
 		return
+	var prev_state := state
+	# Sortie de CROUCH : restaurer la CollisionShape
+	if state == State.CROUCH and new_state != State.CROUCH:
+		_end_crouch()
 	if debug_mode and new_state in [
 		State.ATTACK_LIGHT,     State.ATTACK_STRONG,
 		State.ATTACK_UP,        State.ATTACK_DOWN,
@@ -345,6 +363,9 @@ func _set_state(new_state: State) -> void:
 	]:
 		print("[P%d] %s → %s" % [player_id, State.find_key(state), State.find_key(new_state)])
 	state = new_state
+	# Entrée en CROUCH : réduire la CollisionShape et démarrer le soft drop
+	if new_state == State.CROUCH:
+		_start_crouch(prev_state)
 
 
 # ─── Hitbox ──────────────────────────────────────────────────────────────────
@@ -442,3 +463,30 @@ func start_respawn_invincibility(duration: float) -> void:
 	_respawn_timer = duration
 	_blink_timer   = 0.1
 	_set_state(State.RESPAWNING)
+
+
+# ─── Soft platforms ──────────────────────────────────────────────────────────
+
+func _start_crouch(prev_state: State) -> void:
+	var crouch_h        := char_height * 0.75
+	var cap             := _col_shape.shape as CapsuleShape3D
+	cap.height          = crouch_h
+	_col_shape.position = Vector3(0.0, crouch_h / 2.0, 0.0)
+	# Soft drop uniquement si la transition vient d'un état au sol intentionnel
+	if prev_state == State.IDLE or prev_state == State.RUN:
+		_soft_drop_timer = 0.4
+
+
+func _end_crouch() -> void:
+	var cap             := _col_shape.shape as CapsuleShape3D
+	cap.height          = char_height
+	_col_shape.position = Vector3(0.0, char_height / 2.0, 0.0)
+
+
+func _update_soft_collision() -> void:
+	if _soft_drop_timer > 0.0:
+		collision_mask = 2      # passe à travers les soft platforms (drop volontaire)
+	elif velocity.y > 0.0 and not is_on_floor():
+		collision_mask = 2      # monte : passe à travers par le bas
+	else:
+		collision_mask = 6      # 2 (hard) | 4 (soft) : peut atterrir sur tout
