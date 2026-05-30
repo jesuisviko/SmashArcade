@@ -1,3 +1,120 @@
-[gd_scene format=3 uid="uid://bb3u01h6hy1bi"]
+[gd_scene load_steps=12 format=3 uid="uid://bb3u01h6hy1bi"]
 
-[node name="Map01" type="Node2D"]
+[ext_resource type="Script" uid="uid://bipohffevmrlh" path="res://scripts/map/map_01.gd" id="1_script"]
+
+[sub_resource type="BoxMesh" id="Mesh_main"]
+size = Vector3(16, 0.5, 2)
+
+[sub_resource type="BoxShape3D" id="Shape_main"]
+size = Vector3(16, 0.5, 2)
+
+[sub_resource type="BoxMesh" id="Mesh_side"]
+size = Vector3(4, 0.4, 2)
+
+[sub_resource type="BoxShape3D" id="Shape_side"]
+size = Vector3(4, 0.4, 2)
+
+[sub_resource type="BoxShape3D" id="Zone_H"]
+size = Vector3(40, 4, 10)
+
+[sub_resource type="StandardMaterial3D" id="Mat_kill_h"]
+transparency = 1
+albedo_color = Color(1, 0.5, 0, 0.4)
+
+[sub_resource type="BoxMesh" id="Mesh_kill_h"]
+size = Vector3(40, 0.5, 1)
+
+[sub_resource type="BoxShape3D" id="Zone_V"]
+size = Vector3(4, 30, 10)
+
+[sub_resource type="StandardMaterial3D" id="Mat_kill_side"]
+transparency = 1
+albedo_color = Color(1, 0, 0, 0.4)
+
+[sub_resource type="BoxMesh" id="Mesh_kill_side"]
+size = Vector3(0.5, 30, 1)
+
+[node name="Map01" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="MainPlatform" type="StaticBody3D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MainPlatform"]
+mesh = SubResource("Mesh_main")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MainPlatform"]
+shape = SubResource("Shape_main")
+
+[node name="LeftPlatform" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 3, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="LeftPlatform"]
+mesh = SubResource("Mesh_side")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LeftPlatform"]
+shape = SubResource("Shape_side")
+
+[node name="RightPlatform" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 3, 0)
+collision_layer = 2
+collision_mask = 0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="RightPlatform"]
+mesh = SubResource("Mesh_side")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RightPlatform"]
+shape = SubResource("Shape_side")
+
+[node name="DeathZones" type="Node3D" parent="."]
+
+[node name="BottomZone" type="Area3D" parent="DeathZones"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, 0)
+collision_layer = 0
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathZones/BottomZone"]
+shape = SubResource("Zone_H")
+
+[node name="VisualMesh" type="MeshInstance3D" parent="DeathZones/BottomZone"]
+material_override = SubResource("Mat_kill_h")
+mesh = SubResource("Mesh_kill_h")
+
+[node name="LeftZone" type="Area3D" parent="DeathZones"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 0, 0)
+collision_layer = 0
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathZones/LeftZone"]
+shape = SubResource("Zone_V")
+
+[node name="VisualMesh" type="MeshInstance3D" parent="DeathZones/LeftZone"]
+material_override = SubResource("Mat_kill_side")
+mesh = SubResource("Mesh_kill_side")
+
+[node name="RightZone" type="Area3D" parent="DeathZones"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 0)
+collision_layer = 0
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathZones/RightZone"]
+shape = SubResource("Zone_V")
+
+[node name="VisualMesh" type="MeshInstance3D" parent="DeathZones/RightZone"]
+material_override = SubResource("Mat_kill_side")
+mesh = SubResource("Mesh_kill_side")
+
+[node name="TopZone" type="Area3D" parent="DeathZones"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, 0)
+collision_layer = 0
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DeathZones/TopZone"]
+shape = SubResource("Zone_H")
+
+[node name="VisualMesh" type="MeshInstance3D" parent="DeathZones/TopZone"]
+material_override = SubResource("Mat_kill_h")
+mesh = SubResource("Mesh_kill_h")

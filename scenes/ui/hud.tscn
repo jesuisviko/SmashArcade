@@ -1,3 +1,92 @@
-[gd_scene format=3 uid="uid://c1jy57ey4jqo1"]
+[gd_scene load_steps=2 format=3 uid="uid://c1jy57ey4jqo1"]
 
-[node name="Hud" type="Node2D"]
+[ext_resource type="Script" uid="uid://bjyoptjreygbm" path="res://scripts/ui/hud.gd" id="1_hud"]
+
+[node name="Hud" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_hud")
+
+[node name="P1Panel" type="VBoxContainer" parent="."]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -128.0
+offset_right = 200.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="NameLabel" type="Label" parent="P1Panel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "PLAYER 1"
+
+[node name="DamageLabel" type="Label" parent="P1Panel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 46
+text = "0%"
+
+[node name="StockIcons" type="HBoxContainer" parent="P1Panel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="Stock1" type="ColorRect" parent="P1Panel/StockIcons"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+color = Color(1, 0.85, 0, 1)
+
+[node name="Stock2" type="ColorRect" parent="P1Panel/StockIcons"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+color = Color(1, 0.85, 0, 1)
+
+[node name="Stock3" type="ColorRect" parent="P1Panel/StockIcons"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+color = Color(1, 0.85, 0, 1)
+
+[node name="P2Panel" type="VBoxContainer" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -128.0
+offset_right = -12.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="NameLabel" type="Label" parent="P2Panel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "PLAYER 2"
+horizontal_alignment = 2
+
+[node name="DamageLabel" type="Label" parent="P2Panel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 46
+text = "0%"
+horizontal_alignment = 2
+
+[node name="StockIcons" type="HBoxContainer" parent="P2Panel"]
+layout_mode = 2
+theme_override_constants/separation = 5
+alignment = 2
+
+[node name="Stock1" type="ColorRect" parent="P2Panel/StockIcons"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+color = Color(0.2, 0.4, 1, 1)
+
+[node name="Stock2" type="ColorRect" parent="P2Panel/StockIcons"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+color = Color(0.2, 0.4, 1, 1)
+
+[node name="Stock3" type="ColorRect" parent="P2Panel/StockIcons"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+color = Color(0.2, 0.4, 1, 1)

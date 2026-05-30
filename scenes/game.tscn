@@ -3,17 +3,13 @@
 [ext_resource type="PackedScene" uid="uid://cgvtoqoyovu4y" path="res://scenes/characters/base_character.tscn" id="1_char"]
 [ext_resource type="Script" uid="uid://lb7iqseesw74" path="res://scripts/systems/game_scene.gd" id="2_game_scene"]
 [ext_resource type="Script" uid="uid://kmsarfbhvy3g" path="res://scripts/systems/camera_controller.gd" id="3_cam"]
+[ext_resource type="PackedScene" uid="uid://c1jy57ey4jqo1" path="res://scenes/ui/hud.tscn" id="4_hud"]
+[ext_resource type="PackedScene" uid="uid://bb3u01h6hy1bi" path="res://scenes/map/map_01.tscn" id="5_map"]
 
 [sub_resource type="Environment" id="Environment_1"]
 ambient_light_source = 2
 ambient_light_color = Color(1, 1, 1, 1)
 ambient_light_energy = 0.5
-
-[sub_resource type="BoxMesh" id="BoxMesh_platform"]
-size = Vector3(10, 0.5, 1)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_platform"]
-size = Vector3(10, 0.5, 1)
 
 [node name="Game" type="Node3D"]
 script = ExtResource("2_game_scene")
@@ -29,14 +25,7 @@ transform = Transform3D(1, 0, 0, 0, 0.98480827, 0.1736453, 0, -0.1736453, 0.9848
 fov = 60.0
 script = ExtResource("3_cam")
 
-[node name="Platform" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Platform"]
-mesh = SubResource("BoxMesh_platform")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Platform"]
-shape = SubResource("BoxShape3D_platform")
+[node name="Map01" parent="." instance=ExtResource("5_map")]
 
 [node name="Player1" parent="." instance=ExtResource("1_char")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2, 0)
@@ -46,3 +35,5 @@ debug_mode = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 0)
 player_id = 2
 debug_mode = true
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]

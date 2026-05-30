@@ -8,8 +8,8 @@ var players    : Dictionary = {}
 var game_state : String     = "fighting"
 
 const SPAWN_POSITIONS := {
-	1: Vector3(-2.0, 3.0, 0.0),
-	2: Vector3( 2.0, 3.0, 0.0),
+	1: Vector3(-3.0, 2.0, 0.0),
+	2: Vector3( 3.0, 2.0, 0.0),
 }
 
 
