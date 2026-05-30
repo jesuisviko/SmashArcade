@@ -11,10 +11,10 @@ config_version=5
 [application]
 
 config/name="SmashArcade"
-run/main_scene="uid://enc7n8w2j4hb"
+run/main_scene="uid://vthno6q3n8f3"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
-config/run/main_scene="res://scenes/game.tscn"
+config/run/main_scene="res://scenes/ui/title_screen.tscn"
 
 [autoload]
 

@@ -3,9 +3,13 @@
 
 extends Node
 
-var stocks     : Dictionary = {1: 3, 2: 3}
-var players    : Dictionary = {}
-var game_state : String     = "fighting"
+var stocks        : Dictionary = {1: 3, 2: 3}
+var players       : Dictionary = {}
+var game_state    : String     = "fighting"
+var winner_id     : int        = 0
+var selected_mode : String     = "3_vies"
+var p1_character  : int        = 0
+var p2_character  : int        = 1
 
 const SPAWN_POSITIONS := {
 	1: Vector3(-3.0, 2.0, 0.0),
@@ -41,7 +45,13 @@ func respawn(player_id: int) -> void:
 	player.is_dead         = false
 
 
+func reset() -> void:
+	game_state = "fighting"
+	stocks     = {1: 3, 2: 3}
+	players    = {}
+
+
 func game_over(loser_id: int) -> void:
-	game_state    = "game_over"
-	var winner_id := 2 if loser_id == 1 else 1
-	print("[GAME OVER] Joueur %d gagne !" % winner_id)
+	game_state = "game_over"
+	winner_id  = 2 if loser_id == 1 else 1
+	get_tree().change_scene_to_file("res://scenes/ui/game_over.tscn")

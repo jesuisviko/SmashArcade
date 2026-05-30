@@ -1,3 +1,92 @@
-[gd_scene format=3 uid="uid://dkb18hoh567yw"]
+[gd_scene load_steps=2 format=3 uid="uid://dkb18hoh567yw"]
+
+[ext_resource type="Script" path="res://scripts/ui/how_to_play.gd" id="1_script"]
 
 [node name="HowToPlay" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0, 0, 0, 1)
+
+[node name="TitleLabel" type="Label" parent="."]
+offset_left = 0.0
+offset_top = 40.0
+offset_right = 1280.0
+offset_bottom = 120.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 56
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+text = "COMMENT JOUER"
+
+[node name="Row0" type="Label" parent="."]
+offset_left = 200.0
+offset_top = 170.0
+offset_right = 1080.0
+offset_bottom = 210.0
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+text = "Joystick gauche / droite   ->   Deplacement"
+
+[node name="Row1" type="Label" parent="."]
+offset_left = 200.0
+offset_top = 230.0
+offset_right = 1080.0
+offset_bottom = 270.0
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+text = "Joystick haut              ->   Saut / Double saut"
+
+[node name="Row2" type="Label" parent="."]
+offset_left = 200.0
+offset_top = 290.0
+offset_right = 1080.0
+offset_bottom = 330.0
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+text = "Bouton 1                   ->   Attaque legere"
+
+[node name="Row3" type="Label" parent="."]
+offset_left = 200.0
+offset_top = 350.0
+offset_right = 1080.0
+offset_bottom = 390.0
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+text = "Bouton 2                   ->   Attaque forte"
+
+[node name="Row4" type="Label" parent="."]
+offset_left = 200.0
+offset_top = 410.0
+offset_right = 1080.0
+offset_bottom = 450.0
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+text = "Bouton 3                   ->   Parry (parade)"
+
+[node name="PromptLabel" type="Label" parent="."]
+offset_left = 0.0
+offset_top = 515.0
+offset_right = 1280.0
+offset_bottom = 560.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 26
+theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+text = "P1 et P2 : appuyez sur un bouton pour commencer"
+
+[node name="P1Ready" type="Label" parent="."]
+offset_left = 200.0
+offset_top = 590.0
+offset_right = 620.0
+offset_bottom = 630.0
+theme_override_font_sizes/font_size = 24
+text = "P1 : En attente..."
+
+[node name="P2Ready" type="Label" parent="."]
+offset_left = 660.0
+offset_top = 590.0
+offset_right = 1080.0
+offset_bottom = 630.0
+theme_override_font_sizes/font_size = 24
+text = "P2 : En attente..."
