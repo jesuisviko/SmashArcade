@@ -1,13 +1,16 @@
 extends Camera3D
 
-const FOV_MIN         := 48.0
+const FOV_MIN         := 32.0
 const FOV_MAX         := 72.0
 const DIST_ZOOM_START := 5.0    # distance minimale avant que le FOV commence à augmenter
 const DIST_MAX        := 10.0   # distance de référence pour le zoom max
-const CAM_THRESHOLD   := 2.0    # déplacement X minimal du point médian avant de bouger la caméra
-const X_CLAMP         := 4.0    # limite absolue du déplacement horizontal de la caméra
-const LERP_SPEED      := 0.005
-const FIXED_Y         := 4.0
+const X_CLAMP         := 8.0    # limite absolue du déplacement horizontal de la caméra
+const LERP_SPEED      := 0.08
+const FOV_LERP_SPEED  := 0.008
+const FIXED_Y         := 2.0   # position Y de repos (reset) et minimum de suivi vertical
+const Y_MAX           := 5.0   # Y maximum du suivi vertical
+const Y_OFFSET        := 2.25  # décalage au-dessus du point médian Y des joueurs
+const Y_LERP          := 0.0025 # vitesse de suivi vertical (lent et doux)
 const FIXED_Z         := 8.0
 
 var is_resetting : bool = false
@@ -32,25 +35,30 @@ func _process(_delta: float) -> void:
 
 	var p1x := p1.global_position.x
 	var p2x := p2.global_position.x
+	var p1y := p1.global_position.y
+	var p2y := p2.global_position.y
 
-	# Cible X : suit le point médian si > seuil, clampée aux limites de la map
-	var mid_x    := (p1x + p2x) * 0.5
-	var target_x := clampf(mid_x if abs(mid_x) > CAM_THRESHOLD else 0.0, -X_CLAMP, X_CLAMP)
+	# Cible X : suit toujours le point médian des joueurs, clampé aux limites de la map
+	var mid_x    : float = (p1x + p2x) / 2.0
+	var target_x : float = clamp(mid_x, -X_CLAMP, X_CLAMP)
 
-	# Spread : distance entre les joueurs OU éloignement du joueur le plus excentré
-	# → le FOV réagit aussi quand un joueur sort de la zone de la caméra
-	var dist_between   : float = abs(p1x - p2x)
-	var dist_from_edge : float = max(abs(p1x), abs(p2x)) * 1.5
-	var spread         : float = max(dist_between, dist_from_edge)
+	# Cible Y : suit la moyenne des positions Y + offset, clampée
+	var mid_y    := (p1y + p2y) * 0.5
+	var target_y := clampf(mid_y + Y_OFFSET, FIXED_Y, Y_MAX)
 
-	var zoom_range : float = DIST_MAX - DIST_ZOOM_START
-	var t          : float = clampf((spread - DIST_ZOOM_START) / zoom_range, 0.0, 1.0)
-	var target_fov : float = lerp(FOV_MIN, FOV_MAX, t)
+	# Spread : distance horizontale entre joueurs + composante verticale de la caméra
+	# → le FOV s'agrandit proportionnellement quand la caméra monte
+	var horizontal_spread : float = abs(p1x - p2x)
+	var vertical_spread   : float = max(0.0, (position.y - Y_OFFSET) * 2.0)
+	var fov_from_horizontal : float = (horizontal_spread - 5.0) / 5.0
+	var fov_from_vertical   : float = (vertical_spread   - 1.0) / 3.0
+	var fov_factor          : float = clamp(max(fov_from_horizontal, fov_from_vertical), 0.0, 1.0)
+	var target_fov          : float = lerp(32.0, 72.0, fov_factor)
 
 	position.x = lerp(position.x, target_x, LERP_SPEED)
-	position.y = FIXED_Y
+	position.y = lerp(position.y, target_y, Y_LERP)
 	position.z = FIXED_Z
-	fov        = lerp(fov, target_fov, LERP_SPEED)
+	fov        = lerp(fov, target_fov, FOV_LERP_SPEED)
 
 
 func reset_to_origin() -> void:
