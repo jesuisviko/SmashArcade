@@ -11,6 +11,6 @@ script = ExtResource("2_script")
 visible = false
 
 [node name="Model" type="Node3D" parent="." index="4"]
-transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0)
 
 [node name="char_01" parent="Model" index="0" instance=ExtResource("3_model")]

@@ -19,6 +19,8 @@ func _ready() -> void:
 	# ce qui peut fausser les registrations. On corrige ici après les deux instanciations.
 	p1.player_id = 1
 	p2.player_id = 2
+	p1.set_initial_facing(1.0)    # P1 regarde à droite
+	p2.set_initial_facing(-1.0)   # P2 regarde à gauche
 	GameManager.register_player(1, p1)
 	GameManager.register_player(2, p2)
 

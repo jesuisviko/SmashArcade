@@ -26,12 +26,13 @@ const MAX_JUMPS  := 2
 @export var parry_cooldown                  := 0.5
 @export var debug_mode              : bool  = false
 
-var state          : State = State.IDLE
-var jumps_left     : int   = MAX_JUMPS
-var damage_percent : float = 0.0
-var is_dead        : bool  = false
+var state            : State = State.IDLE
+var jumps_left       : int   = MAX_JUMPS
+var damage_percent   : float = 0.0
+var is_dead          : bool  = false
 var is_invincible    : bool  = false
 var facing_direction : float = 1.0   # 1.0 = droite, -1.0 = gauche
+var _model_node      : Node3D = null
 
 var _up_was_pressed  : bool  = false
 var _attack_timer    : float = 0.0
@@ -58,6 +59,7 @@ var _debug_hurt_mesh   : MeshInstance3D = null
 # ─── Init ────────────────────────────────────────────────────────────────────
 
 func _ready() -> void:
+	_model_node = get_node_or_null("Model")
 	_apply_size()
 	GameManager.register_player(player_id, self)
 	_attack_hitbox.area_entered.connect(_on_attack_hitbox_area_entered)
@@ -315,6 +317,9 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 		facing_direction = 1.0
 	elif input["left"]:
 		facing_direction = -1.0
+	if _model_node and dir != 0:
+		var target_rot := -PI / 2 if facing_direction == -1.0 else PI / 2
+		_model_node.rotation.y = lerp_angle(_model_node.rotation.y, target_rot, 0.15)
 
 	# Saut : déclenché sur le front montant de "up" uniquement
 	if input["up"] and not _up_was_pressed and jumps_left > 0:
@@ -466,6 +471,12 @@ func start_respawn_invincibility(duration: float) -> void:
 	_respawn_timer = duration
 	_blink_timer   = 0.1
 	_set_state(State.RESPAWNING)
+
+
+func set_initial_facing(direction: float) -> void:
+	facing_direction = direction
+	if _model_node:
+		_model_node.rotation.y = -PI / 2 if direction == -1.0 else PI / 2
 
 
 # ─── Soft platforms ──────────────────────────────────────────────────────────
