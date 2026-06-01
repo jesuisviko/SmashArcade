@@ -9,13 +9,13 @@ enum State {
 }
 
 const GRAVITY    := 32.0
-const JUMP_SPEED := 12.0
+const JUMP_SPEED := 10.2
 const MAX_JUMPS  := 2
 
 @export var player_id               : int   = 1
 @export var char_height                     := 1.4
 @export var char_radius                     := 0.35
-@export var char_speed                      := 8.0
+@export var char_speed                      := 6.5
 @export var weight_multiplier               := 1.0
 @export var attack_light_damage             := 5.0
 @export var attack_strong_damage            := 12.0
@@ -303,12 +303,14 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 		_up_was_pressed = input["up"]
 		return
 
-	var dir := int(input["right"]) - int(input["left"])
+	var dir          := int(input["right"]) - int(input["left"])
+	var target_speed := float(dir) * char_speed
+	var accel        := 12.0 if dir != 0 else 20.0   # décélération plus rapide que l'accélération
 	if _post_hitstun_grace > 0.0:
 		_post_hitstun_grace -= delta
-		velocity.x = lerp(velocity.x, dir * char_speed, 0.08)
+		velocity.x = lerp(velocity.x, target_speed, 0.08)
 	else:
-		velocity.x = dir * char_speed
+		velocity.x = lerp(velocity.x, target_speed, accel * delta)
 	if input["right"]:
 		facing_direction = 1.0
 	elif input["left"]:
