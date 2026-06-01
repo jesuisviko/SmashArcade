@@ -49,8 +49,8 @@ func _process(_delta: float) -> void:
 			_p2_ok = true
 			_refresh()
 	if _p1_ok and _p2_ok:
-		GameManager.p1_character = _p1_idx
-		GameManager.p2_character = _p2_idx
+		GameManager.p1_character = _p1_idx + 1   # 0-based → 1-based (1-4)
+		GameManager.p2_character = _p2_idx + 1
 		get_tree().change_scene_to_file(SCENE_NEXT)
 
 func _refresh() -> void:

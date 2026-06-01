@@ -1,4 +1,5 @@
 extends CharacterBody3D
+class_name BaseCharacter
 
 enum State {
 	IDLE, RUN, JUMP, FALL,

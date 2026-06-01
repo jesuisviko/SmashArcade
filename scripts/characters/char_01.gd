@@ -1,11 +1,9 @@
-extends Node
+extends BaseCharacter
 
-
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+	char_height       = 1.4
+	char_radius       = 0.35
+	weight_multiplier = 1.0
+	char_speed        = 12.0
+	player_id         = 1
+	super._ready()

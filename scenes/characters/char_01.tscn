@@ -1,3 +1,16 @@
-[gd_scene format=3 uid="uid://c1iwfjp2fby0x"]
+[gd_scene load_steps=4 format=3 uid="uid://c1iwfjp2fby0x"]
 
-[node name="Char01" type="Node2D"]
+[ext_resource type="PackedScene" uid="uid://cgvtoqoyovu4y" path="res://scenes/characters/base_character.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://kn280tmymfqr" path="res://scripts/characters/char_01.gd" id="2_script"]
+[ext_resource type="PackedScene" uid="uid://xs5q18gom34k" path="res://assets/models/characters/char_01.glb" id="3_model"]
+
+[node name="Char01" instance=ExtResource("1_base")]
+script = ExtResource("2_script")
+
+[node name="MeshInstance3D" parent="." index="1"]
+visible = false
+
+[node name="Model" type="Node3D" parent="." index="4"]
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 0, 0, 0)
+
+[node name="char_01" parent="Model" index="0" instance=ExtResource("3_model")]
