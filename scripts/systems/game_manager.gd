@@ -43,23 +43,21 @@ func respawn(player_id: int) -> void:
 	if not players.has(player_id):
 		return
 	var player: CharacterBody3D = players[player_id]
+	var cam   : Camera3D        = get_tree().get_first_node_in_group("camera")
 
-	# Téléporte hors écran et désactive la physique
+	# Téléporte hors écran, désactive la physique, caméra vers position centrale
 	player.global_position    = Vector3(0.0, -50.0, 0.0)
 	player.set_physics_process(false)
 	player.visible            = false
+	if cam and cam.has_method("start_reset"):
+		cam.start_reset()
 
 	# Attendre 2 secondes réelles
 	await get_tree().create_timer(2.0).timeout
 	if not is_instance_valid(player) or game_state != "fighting":
 		return
 
-	# Reset rapide de la caméra en 0.5s
-	var cam: Camera3D = get_tree().get_first_node_in_group("camera")
-	if cam and cam.has_method("reset_to_origin_quick"):
-		cam.reset_to_origin_quick(0.5)
-
-	# Attendre 0.5 secondes pendant le reset caméra
+	# Pause avant réapparition
 	await get_tree().create_timer(0.5).timeout
 	if not is_instance_valid(player) or game_state != "fighting":
 		return
@@ -72,9 +70,11 @@ func respawn(player_id: int) -> void:
 	player.visible            = true
 	player.set_physics_process(true)
 
-	# Invincibilité de respawn
+	# Invincibilité de respawn + focus caméra sur le joueur
 	if player.has_method("start_respawn_invincibility"):
 		player.start_respawn_invincibility(4.0)
+	if cam and cam.has_method("start_focus"):
+		cam.start_focus(player)
 
 
 func reset() -> void:
