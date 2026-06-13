@@ -8,14 +8,14 @@ enum State {
 	PARRY, HITSTUN, RESPAWNING, CROUCH,
 }
 
-const GRAVITY    := 32.0
+const GRAVITY    := 24.0
 const JUMP_SPEED := 10.2
 const MAX_JUMPS  := 2
 
 @export var player_id               : int   = 1
 @export var char_height                     := 1.4
 @export var char_radius                     := 0.35
-@export var char_speed                      := 6.5
+@export var char_speed                      := 4.68
 @export var weight_multiplier               := 1.0
 @export var attack_light_damage             := 5.0
 @export var attack_strong_damage            := 12.0
@@ -441,6 +441,11 @@ func jump() -> void:
 	velocity.y = JUMP_SPEED
 	jumps_left -= 1
 	_set_state(State.JUMP)
+	_on_jump()
+
+
+func _on_jump() -> void:
+	pass   # hook virtuel — override dans les sous-classes
 
 
 # Appelé par combat_system

@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://cgvtoqoyovu4y" path="res://scenes/characters/base_character.tscn" id="1_base"]
 [ext_resource type="Script" uid="uid://kn280tmymfqr" path="res://scripts/characters/char_01.gd" id="2_script"]
-[ext_resource type="PackedScene" uid="uid://dwmrxlqxgt6c" path="res://assets/models/characters/char_01.glb" id="3_model"]
+[ext_resource type="PackedScene" uid="uid://dra3ys4fy4o8p" path="res://assets/models/characters/char_01_MOUVEMENTS.glb" id="3_model"]
 
 [node name="Char01" instance=ExtResource("1_base")]
 script = ExtResource("2_script")
@@ -11,6 +11,6 @@ script = ExtResource("2_script")
 visible = false
 
 [node name="Model" type="Node3D" parent="." index="4"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0, 0, 0)
+transform = Transform3D(0, 0, -0.65, 0, 0.65, 0, 0.65, 0, 0, 0, 0, 0)
 
-[node name="char_01" parent="Model" index="0" instance=ExtResource("3_model")]
+[node name="char_01_MOUVEMENTS" parent="Model" index="0" instance=ExtResource("3_model")]

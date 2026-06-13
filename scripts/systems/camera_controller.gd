@@ -1,6 +1,6 @@
 extends Camera3D
 
-const FOV_MIN         := 32.0
+const FOV_MIN         := 36.8
 const FOV_MAX         := 72.0
 const DIST_ZOOM_START := 5.0    # distance minimale avant que le FOV commence à augmenter
 const DIST_MAX        := 10.0   # distance de référence pour le zoom max
@@ -9,7 +9,7 @@ const LERP_SPEED      := 0.08
 const FOV_LERP_SPEED  := 0.008
 const FIXED_Y         := 2.0    # position Y de repos (snap game_over) et minimum de suivi
 const Y_MAX           := 5.0    # Y maximum du suivi vertical
-const Y_OFFSET        := 2.25   # décalage au-dessus du point médian Y des joueurs
+const Y_OFFSET        := 2.65   # décalage au-dessus du point médian Y des joueurs
 const Y_LERP          := 0.0025 # vitesse de suivi vertical (lent et doux)
 const FIXED_Z         := 8.0
 
@@ -62,7 +62,7 @@ func _process_normal() -> void:
 	var fov_from_horizontal : float = (horizontal_spread - 5.0) / 5.0
 	var fov_from_vertical   : float = (vertical_spread   - 1.0) / 3.0
 	var fov_factor          : float = clamp(max(fov_from_horizontal, fov_from_vertical), 0.0, 1.0)
-	var target_fov          : float = lerp(32.0, 72.0, fov_factor)
+	var target_fov          : float = lerp(FOV_MIN, 72.0, fov_factor)
 	# FOV compensatoire quand le point médian dépasse le clamp latéral
 	var overflow_fov        : float = clamp(overflow * 8.0, 0.0, 20.0)
 	target_fov = min(target_fov + overflow_fov, 67.0)
