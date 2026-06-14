@@ -35,18 +35,37 @@ var facing_direction : float = 1.0   # 1.0 = droite, -1.0 = gauche
 var _model_node      : Node3D = null
 
 var _up_was_pressed  : bool  = false
+var _air_up_used     : bool  = false   # un seul ATTACK_AIR_UP avant de retoucher le sol
+var _air_down_used   : bool  = false   # un seul ATTACK_AIR_DOWN avant de retoucher le sol
 var _attack_timer    : float = 0.0
 var _parry_timer     : float = 0.0
 var _parry_cd_timer  : float = 0.0
-var _hitstun_timer         : float = 0.0
 var _post_hitstun_grace    : float = 0.0
 var _respawn_timer         : float = 0.0
 var _blink_timer           : float = 0.0
-var _soft_drop_timer       : float = 0.0
+var _soft_drop_timer          : float = 0.0
+var _hit_delay_timer          : float = 0.0
+var _down_attack_phase        : int   = 0     # 0=inactif, 1=gel, 2=plongée
+var _down_attack_freeze_timer : float = 0.0
+
+var combo_count          : int     = 0
+var _combo_window_timer  : float   = 0.0    # 1 s pour compter un coup dans le combo
+var _freeze_timer        : float   = 0.0    # gel du hitstun — knockback appliqué à expiration
+var _pending_knockback   : Vector3 = Vector3.ZERO
+
+var _multihit_tick_timer      : float           = 0.0
+var _is_juggled               : bool            = false
+var _juggle_timer             : float           = 0.0
+var _juggle_attacker          : BaseCharacter   = null
 
 # Meshes de debug (créés uniquement si debug_mode = true)
 var _debug_attack_mesh : MeshInstance3D = null
 var _debug_hurt_mesh   : MeshInstance3D = null
+var _debug_parry_mesh  : MeshInstance3D = null
+
+# Configs d'attaque par état — peuplées par les sous-classes dans _ready()
+var _attack_configs       : Dictionary = {}
+var _active_attack_config : Dictionary = {}
 
 @onready var _col_shape    : CollisionShape3D = $CollisionShape3D
 @onready var _mesh         : MeshInstance3D   = $MeshInstance3D
@@ -128,18 +147,38 @@ func _setup_debug_meshes() -> void:
 	_debug_hurt_mesh.material_override = mat_hurt
 	_hurtbox.add_child(_debug_hurt_mesh)
 
+	# ── Parry : sphère bleue semi-transparente, cachée par défaut ────────────
+	_debug_parry_mesh = MeshInstance3D.new()
+	var sm   := SphereMesh.new()
+	sm.radius = char_radius * 1.5
+	sm.height = char_radius * 3.0
+	_debug_parry_mesh.mesh     = sm
+	var mat_parry              := StandardMaterial3D.new()
+	mat_parry.transparency      = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat_parry.shading_mode      = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat_parry.albedo_color      = Color(0.2, 0.4, 1.0, 0.4)
+	_debug_parry_mesh.material_override = mat_parry
+	_debug_parry_mesh.position          = Vector3(0.0, char_height / 2.0, 0.0)
+	_debug_parry_mesh.visible           = false
+	add_child(_debug_parry_mesh)
+
 
 # ─── Boucle principale ───────────────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
 	var input := InputManager.get_input(player_id)
-	_tick_timers(delta)
 	_handle_attack_input(input)
+	_tick_timers(delta)
 	_apply_gravity(delta)
 	_apply_movement(input, delta)
 	_update_soft_collision()   # masque collision avant move_and_slide
+	if _is_juggled and is_instance_valid(_juggle_attacker):
+		velocity          = Vector3.ZERO
+		global_position.y = _juggle_attacker.global_position.y
+		global_position.x = _juggle_attacker.global_position.x + 0.3 * _juggle_attacker.facing_direction
+		position.z        = 0.0
 	move_and_slide()
-	position.z = 0.0           # axe Z verrouillé en permanence
+	position.z = 0.0
 	_update_state(input)
 
 
@@ -159,13 +198,57 @@ func _tick_timers(delta: float) -> void:
 	if _parry_cd_timer > 0.0:
 		_parry_cd_timer -= delta
 
-	if _hitstun_timer > 0.0:
-		_hitstun_timer -= delta
-		if _hitstun_timer <= 0.0 and state == State.HITSTUN:
-			_end_hitstun()
-
 	if _soft_drop_timer > 0.0:
 		_soft_drop_timer -= delta
+
+	# Délai avant activation de la hitbox
+	if _hit_delay_timer > 0.0:
+		_hit_delay_timer -= delta
+		if _hit_delay_timer <= 0.0 and _is_attacking():
+			_attack_shape.disabled    = false
+			_attack_hitbox.monitoring = true
+			if debug_mode and _debug_attack_mesh:
+				_debug_attack_mesh.visible = true
+
+	# ATTACK_AIR_DOWN phase 1 → phase 2 (gel → plongée)
+	if _down_attack_phase == 1:
+		_down_attack_freeze_timer -= delta
+		if _down_attack_freeze_timer <= 0.0:
+			_down_attack_phase        = 2
+			velocity.y                = -JUMP_SPEED
+			_attack_shape.disabled    = false
+			_attack_hitbox.monitoring = true
+			if debug_mode and _debug_attack_mesh:
+				_debug_attack_mesh.visible = true
+
+	# Combo window — décompte simple, pas d'action à l'expiration
+	if _combo_window_timer > 0.0:
+		_combo_window_timer = max(0.0, _combo_window_timer - delta)
+
+	# Gel du hitstun — à expiration : lance le personnage avec le knockback stocké
+	if _freeze_timer > 0.0:
+		_freeze_timer -= delta
+		if _freeze_timer <= 0.0 and state == State.HITSTUN:
+			velocity            = _pending_knockback / weight_multiplier
+			velocity.z          = 0.0
+			combo_count         = 0
+			_combo_window_timer = 0.0
+			_end_hitstun()
+
+	# Multi-hit ATTACK_AIR_UP — piloté par timer, indépendant de area_entered
+	if state == State.ATTACK_AIR_UP and not _attack_shape.disabled:
+		_multihit_tick_timer -= delta
+		if _multihit_tick_timer <= 0.0:
+			_air_up_multihit()
+			_multihit_tick_timer = 0.1
+
+	# Juggle — si la fenêtre expire sans nouveau coup : retombe librement, pas de knockback
+	if _juggle_timer > 0.0:
+		_juggle_timer -= delta
+		if _juggle_timer <= 0.0 and _is_juggled:
+			_is_juggled      = false
+			_juggle_attacker = null
+			_set_state(State.FALL)
 
 	if state == State.RESPAWNING:
 		_respawn_timer -= delta
@@ -178,8 +261,10 @@ func _tick_timers(delta: float) -> void:
 
 
 func _end_hitstun() -> void:
-	# velocity intentionnellement non modifiée — le momentum est conservé
 	_post_hitstun_grace = 0.3
+	if debug_mode and _debug_hurt_mesh:
+		var mat := _debug_hurt_mesh.material_override as StandardMaterial3D
+		mat.albedo_color = Color(0.0, 1.0, 0.0, 0.28) if player_id == 1 else Color(0.2, 0.4, 1.0, 0.28)
 	_set_state(State.JUMP if velocity.y > 0.0 else State.FALL)
 
 
@@ -199,22 +284,32 @@ func _handle_attack_input(input: Dictionary) -> void:
 	if input["attack_light"]:
 		var s: State = State.ATTACK_LIGHT
 		if is_on_floor():
-			if   input["up"]:   s = State.ATTACK_UP
-			elif input["down"]: s = State.ATTACK_DOWN
+			if input["down"]: s = State.ATTACK_DOWN
+			_start_attack(s)
 		else:
 			if   input["up"]:   s = State.ATTACK_AIR_UP
 			elif input["down"]: s = State.ATTACK_AIR_DOWN
 			else:               s = State.ATTACK_AIR_LIGHT
-		_start_attack(s)
+			if s == State.ATTACK_AIR_UP and _air_up_used:
+				return
+			if s == State.ATTACK_AIR_DOWN and _air_down_used:
+				return
+			_start_attack(s)
+			if   s == State.ATTACK_AIR_UP:   _air_up_used   = true
+			elif s == State.ATTACK_AIR_DOWN: _air_down_used = true
 
 	elif input["attack_strong"]:
 		var s: State = State.ATTACK_STRONG
 		if is_on_floor():
-			if   input["up"]:   s = State.ATTACK_UP
-			elif input["down"]: s = State.ATTACK_DOWN
+			if input["down"]: s = State.ATTACK_DOWN
+			_start_attack(s)
 		else:
-			s = State.ATTACK_AIR_STRONG
-		_start_attack(s)
+			if   input["up"]: s = State.ATTACK_AIR_UP
+			else:             s = State.ATTACK_AIR_STRONG
+			if s == State.ATTACK_AIR_UP and _air_up_used:
+				return
+			_start_attack(s)
+			if s == State.ATTACK_AIR_UP: _air_up_used = true
 
 	elif input["parry"]:
 		_start_parry()
@@ -222,37 +317,124 @@ func _handle_attack_input(input: Dictionary) -> void:
 
 func _start_attack(new_state: State) -> void:
 	_set_state(new_state)
-	_attack_timer             = attack_duration
-	_attack_shape.disabled    = false    # ← FIX : shape actif pendant l'attaque
-	_attack_hitbox.monitoring = true
-
-	# Positionnement de l'hitbox selon la direction et le type d'attaque
-	match new_state:
-		State.ATTACK_UP, State.ATTACK_AIR_UP:
-			_attack_hitbox.position = Vector3(0.0, char_height * 0.8, 0.0)
-		State.ATTACK_DOWN:
-			_attack_hitbox.position = Vector3(0.0, char_height * 0.2, 0.0)
-		State.ATTACK_AIR_DOWN:
-			_attack_hitbox.position = Vector3(0.0, -0.5, 0.0)
-		_:
-			_attack_hitbox.position = Vector3(facing_direction * (char_radius + 0.3), char_height * 0.5, 0.0)
-
+	_active_attack_config     = {}
+	_hit_delay_timer          = 0.0
+	_down_attack_phase        = 0
+	_attack_shape.disabled    = true
+	_attack_hitbox.monitoring = false
 	if debug_mode and _debug_attack_mesh:
-		var mat := _debug_attack_mesh.material_override as StandardMaterial3D
-		if new_state in [State.ATTACK_STRONG, State.ATTACK_AIR_STRONG]:
-			mat.albedo_color = Color(1.0, 0.0, 0.0, 0.55)   # rouge = strong
+		_debug_attack_mesh.visible = false
+
+	var state_key : String = State.find_key(new_state)
+	if _attack_configs.has(state_key):
+		var cfg : Dictionary = _attack_configs[state_key]
+		var pos : Vector3    = cfg.get("position", Vector3.ZERO)
+		pos.x               *= facing_direction
+		_attack_hitbox.position = pos
+		var box := _attack_shape.shape as BoxShape3D
+		if box:
+			box.size = cfg.get("size", box.size)
+		_attack_timer         = cfg.get("duration", attack_duration)
+		_active_attack_config = cfg
+
+		if cfg.has("velocity_y"):
+			velocity.y = cfg["velocity_y"]
+
+		if new_state == State.ATTACK_AIR_DOWN:
+			# Phase 1 : gel 0.4 s, hitbox inactive — timer géré par le système de phases
+			_down_attack_phase        = 1
+			_down_attack_freeze_timer = 0.4
+			_attack_timer             = 99.0
+			velocity                  = Vector3.ZERO
+		elif new_state == State.ATTACK_AIR_UP:
+			# Montée linéaire 0.8s — gravité coupée, hitbox active immédiatement, horizontal libre
+			var jump_height : float   = (JUMP_SPEED * JUMP_SPEED) / (2.0 * GRAVITY)
+			velocity.y                = jump_height * 0.65 / 0.8 * 1.25 * 1.8
+			_attack_timer             = 0.8
+			_multihit_tick_timer      = 0.0
+			_attack_shape.disabled    = false
+			_attack_hitbox.monitoring = true
+			if debug_mode and _debug_attack_mesh:
+				_debug_attack_mesh.visible = true
+		elif cfg.get("hit_delay", 0.0) > 0.0:
+			_hit_delay_timer = cfg["hit_delay"]
+			# hitbox reste désactivée jusqu'à expiration du délai
 		else:
-			mat.albedo_color = Color(1.0, 1.0, 0.0, 0.55)   # jaune = light/directionnel
-		_debug_attack_mesh.visible = true
+			_attack_shape.disabled    = false
+			_attack_hitbox.monitoring = true
+			if debug_mode and _debug_attack_mesh:
+				_debug_attack_mesh.visible = true
+
+		if debug_mode and _debug_attack_mesh:
+			var box_mesh := _debug_attack_mesh.mesh as BoxMesh
+			if box_mesh:
+				box_mesh.size = cfg.get("size", box_mesh.size)
+			var mat       := _debug_attack_mesh.material_override as StandardMaterial3D
+			var is_strong := new_state in [State.ATTACK_STRONG, State.ATTACK_AIR_STRONG]
+			mat.albedo_color = Color(1.0, 0.0, 0.0, 0.55) if is_strong else Color(1.0, 1.0, 0.0, 0.55)
+	else:
+		_attack_timer = attack_duration
+		match new_state:
+			State.ATTACK_UP, State.ATTACK_AIR_UP:
+				_attack_hitbox.position = Vector3(0.0, char_height * 0.8, 0.0)
+			State.ATTACK_DOWN:
+				_attack_hitbox.position = Vector3(0.0, char_height * 0.2, 0.0)
+			State.ATTACK_AIR_DOWN:
+				_attack_hitbox.position = Vector3(0.0, -0.5, 0.0)
+			_:
+				_attack_hitbox.position = Vector3(facing_direction * (char_radius + 0.3), char_height * 0.5, 0.0)
+		_attack_shape.disabled    = false
+		_attack_hitbox.monitoring = true
+		if debug_mode and _debug_attack_mesh:
+			var mat := _debug_attack_mesh.material_override as StandardMaterial3D
+			if new_state in [State.ATTACK_STRONG, State.ATTACK_AIR_STRONG]:
+				mat.albedo_color = Color(1.0, 0.0, 0.0, 0.55)
+			else:
+				mat.albedo_color = Color(1.0, 1.0, 0.0, 0.55)
+			_debug_attack_mesh.visible = true
 
 
 func _end_attack() -> void:
+	# ATTACK_AIR_UP : libère les cibles jugglées — le dernier hit (apply_hit) les
+	# propulse via la résolution normale du hitstun (_freeze_timer)
+	if state == State.ATTACK_AIR_UP:
+		for p in GameManager.players.values():
+			var bc := p as BaseCharacter
+			if bc == null or bc == self:
+				continue
+			if bc._is_juggled and bc._juggle_attacker == self:
+				bc._is_juggled      = false
+				bc._juggle_attacker = null
+				bc._juggle_timer    = 0.0
+
 	_attack_hitbox.monitoring = false
-	_attack_shape.disabled    = true     # ← FIX : shape inactif hors attaque
+	_attack_shape.disabled    = true
+	_hit_delay_timer          = 0.0
+	_down_attack_phase        = 0
 	if debug_mode and _debug_attack_mesh:
 		_debug_attack_mesh.visible = false
 	if not (state == State.HITSTUN or state == State.PARRY):
 		_set_state(State.IDLE)
+
+
+# ATTACK_AIR_UP — un tick de multi-hit : frappe toutes les cibles présentes dans la
+# hitbox et rafraîchit leur fenêtre de juggle. Appelé par _tick_timers, pas par area_entered.
+func _air_up_multihit() -> void:
+	var dmg   : float   = _active_attack_config.get("damage",    attack_light_damage)
+	var kb    : float   = _active_attack_config.get("knockback", attack_light_knockback)
+	var angle : Vector2 = _active_attack_config.get("knockback_angle", Vector2(0.0, 1.0))
+	for area in _attack_hitbox.get_overlapping_areas():
+		if area.name != "HurtBox":
+			continue
+		var target := area.get_parent() as BaseCharacter
+		if target == null or target == self or target.is_dead:
+			continue
+		CombatSystem.apply_hit(self, target, dmg, kb, angle)
+		target._is_juggled      = true
+		target._juggle_attacker = self
+		target._juggle_timer    = 0.35
+		if target.has_method("flash_hurtbox"):
+			target.flash_hurtbox()
 
 
 func _is_attacking() -> bool:
@@ -272,11 +454,15 @@ func _start_parry() -> void:
 	_set_state(State.PARRY)
 	is_invincible = true
 	_parry_timer  = parry_duration
+	if debug_mode and _debug_parry_mesh:
+		_debug_parry_mesh.visible = true
 
 
 func _end_parry() -> void:
 	is_invincible   = false
 	_parry_cd_timer = parry_cooldown
+	if debug_mode and _debug_parry_mesh:
+		_debug_parry_mesh.visible = false
 	if state == State.PARRY:
 		_set_state(State.IDLE)
 
@@ -288,9 +474,15 @@ func _apply_gravity(delta: float) -> void:
 		velocity.y = 0.0
 		velocity.x = 0.0
 		return
+	if state == State.ATTACK_AIR_DOWN and _down_attack_phase >= 1:
+		return   # gel (phase 1) et plongée (phase 2) : pas de gravité
+	if state == State.ATTACK_AIR_UP:
+		return   # montée linéaire contrôlée pendant 0.8s
+	if _is_juggled:
+		velocity = Vector3.ZERO
+		return
 	if state == State.HITSTUN:
-		velocity.y -= 4.0 * delta              # gravité réduite pendant le vol
-		velocity.x  = lerp(velocity.x, 0.0, 0.015)  # décélération horizontale douce
+		return   # velocity figée à zéro pendant le gel — gravité reprend à l'expiration du _freeze_timer
 	elif is_on_floor():
 		if velocity.y < 0.0:
 			velocity.y = 0.0
@@ -300,14 +492,24 @@ func _apply_gravity(delta: float) -> void:
 
 
 func _apply_movement(input: Dictionary, delta: float) -> void:
-	if state == State.HITSTUN or _is_attacking() or state == State.PARRY \
+	# Décélération rapide au sol pendant une attaque — le personnage freine mais ne peut pas se déplacer
+	if (state == State.ATTACK_LIGHT or state == State.ATTACK_STRONG \
+			or state == State.ATTACK_UP or state == State.ATTACK_DOWN) and is_on_floor():
+		velocity.x      = lerp(velocity.x, 0.0, 0.3)
+		_up_was_pressed = input["up"]
+		return
+	if _is_juggled or state == State.HITSTUN or state == State.PARRY \
 			or state == State.RESPAWNING or state == State.CROUCH:
+		_up_was_pressed = input["up"]
+		return
+	# ATTACK_AIR_UP : mouvement horizontal libre, saut bloqué — tous les autres états attaquants bloqués
+	if _is_attacking() and state != State.ATTACK_AIR_UP:
 		_up_was_pressed = input["up"]
 		return
 
 	var dir          := int(input["right"]) - int(input["left"])
 	var target_speed := float(dir) * char_speed
-	var accel        := 12.0 if dir != 0 else 20.0   # décélération plus rapide que l'accélération
+	var accel        := 12.0 if dir != 0 else 20.0
 	if _post_hitstun_grace > 0.0:
 		_post_hitstun_grace -= delta
 		velocity.x = lerp(velocity.x, target_speed, 0.08)
@@ -321,9 +523,10 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 		var target_rot := -PI / 2 if facing_direction == -1.0 else PI / 2
 		_model_node.rotation.y = lerp_angle(_model_node.rotation.y, target_rot, 0.15)
 
-	# Saut : déclenché sur le front montant de "up" uniquement
-	if input["up"] and not _up_was_pressed and jumps_left > 0:
-		jump()
+	# Saut : bloqué pendant ATTACK_AIR_UP
+	if state != State.ATTACK_AIR_UP:
+		if input["up"] and not _up_was_pressed and jumps_left > 0:
+			jump()
 	_up_was_pressed = input["up"]
 
 
@@ -335,6 +538,11 @@ func _update_state(input: Dictionary) -> void:
 				or input["attack_light"] or input["attack_strong"] or input["parry"])
 		if any_input:
 			_end_respawning()
+		return
+	# ATTACK_AIR_DOWN : atterrissage pendant la plongée → fin d'attaque normale
+	if state == State.ATTACK_AIR_DOWN and _down_attack_phase >= 1 and is_on_floor():
+		_down_attack_phase = 0
+		_end_attack()
 		return
 	if _is_attacking() or state == State.HITSTUN or state == State.PARRY:
 		return
@@ -352,6 +560,10 @@ func _update_state(input: Dictionary) -> void:
 			new_state = State.RUN
 	else:
 		new_state = State.JUMP if velocity.y > 0.0 else State.FALL
+	# Retour au sol : réarme les attaques aériennes pour le prochain saut
+	if is_on_floor() and (new_state == State.IDLE or new_state == State.RUN):
+		_air_up_used   = false
+		_air_down_used = false
 	_set_state(new_state)
 
 
@@ -388,29 +600,41 @@ func _on_attack_hitbox_area_entered(area: Area3D) -> void:
 	if debug_mode:
 		print("[P%d] HIT signal → %s" % [player_id, target.name])
 
-	var damage        : float   = 0.0
-	var base_knockback: float   = 0.0
+	# ATTACK_AIR_UP : hits gérés par le timer multi-hit (_air_up_multihit) — ignore area_entered
+	if state == State.ATTACK_AIR_UP:
+		return
+
+	var damage         : float   = 0.0
+	var base_knockback : float   = 0.0
 	var knockback_angle: Vector2
 
-	match state:
-		State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT:
-			damage          = attack_light_damage
-			base_knockback  = attack_light_knockback
+	if not _active_attack_config.is_empty():
+		damage          = _active_attack_config.get("damage",    attack_light_damage)
+		base_knockback  = _active_attack_config.get("knockback", attack_light_knockback)
+		if _active_attack_config.has("knockback_angle"):
+			knockback_angle = _active_attack_config["knockback_angle"]
+		else:
 			knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.3).normalized()
-		State.ATTACK_STRONG, State.ATTACK_AIR_STRONG:
-			damage          = attack_strong_damage
-			base_knockback  = attack_strong_knockback
-			knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.3).normalized()
-		State.ATTACK_UP, State.ATTACK_AIR_UP:
-			damage          = attack_light_damage
-			base_knockback  = attack_light_knockback
-			knockback_angle = Vector2(0.0, 1.0)
-		State.ATTACK_DOWN, State.ATTACK_AIR_DOWN:
-			damage          = attack_light_damage
-			base_knockback  = attack_light_knockback
-			knockback_angle = Vector2(0.0, -1.0)
-		_:
-			return  # état non-attaquant : ignorer
+	else:
+		match state:
+			State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT:
+				damage          = attack_light_damage
+				base_knockback  = attack_light_knockback
+				knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.3).normalized()
+			State.ATTACK_STRONG, State.ATTACK_AIR_STRONG:
+				damage          = attack_strong_damage
+				base_knockback  = attack_strong_knockback
+				knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.3).normalized()
+			State.ATTACK_UP, State.ATTACK_AIR_UP:
+				damage          = attack_light_damage
+				base_knockback  = attack_light_knockback
+				knockback_angle = Vector2(0.0, 1.0)
+			State.ATTACK_DOWN, State.ATTACK_AIR_DOWN:
+				damage          = attack_light_damage
+				base_knockback  = attack_light_knockback
+				knockback_angle = Vector2(0.0, -1.0)
+			_:
+				return  # état non-attaquant : ignorer
 
 	# Un seul hit par swing
 	_attack_hitbox.monitoring = false
@@ -418,7 +642,18 @@ func _on_attack_hitbox_area_entered(area: Area3D) -> void:
 	if target.has_method("flash_hurtbox"):
 		target.flash_hurtbox()
 
-	CombatSystem.apply_hit(self, target, damage, base_knockback, knockback_angle)
+	var forced_hitstun : float = _active_attack_config.get("forced_hitstun", -1.0)
+	CombatSystem.apply_hit(self, target, damage, base_knockback, knockback_angle, forced_hitstun)
+
+	# ATTACK_AIR_DOWN — interrompt la plongée sur hit
+	if state == State.ATTACK_AIR_DOWN:
+		_attack_timer      = 0.0
+		_down_attack_phase = 0
+		velocity.y         = 0.0
+		_attack_shape.disabled = true
+		if debug_mode and _debug_attack_mesh:
+			_debug_attack_mesh.visible = false
+		_set_state(State.FALL)
 
 
 # Flash orange sur la hurtbox debug quand le personnage reçoit un hit
@@ -429,8 +664,11 @@ func flash_hurtbox() -> void:
 	mat.albedo_color = Color(1.0, 0.35, 0.0, 0.7)   # flash orange
 	await get_tree().create_timer(0.15).timeout
 	if is_instance_valid(_debug_hurt_mesh):
-		# Retour à la couleur d'origine : vert P1, bleu P2
-		mat.albedo_color = Color(0.0, 1.0, 0.0, 0.28) if player_id == 1 else Color(0.2, 0.4, 1.0, 0.28)
+		# Violet si toujours en HITSTUN, sinon retour à la couleur normale
+		if state == State.HITSTUN:
+			mat.albedo_color = Color(0.6, 0.2, 0.8, 0.5)
+		else:
+			mat.albedo_color = Color(0.0, 1.0, 0.0, 0.28) if player_id == 1 else Color(0.2, 0.4, 1.0, 0.28)
 
 
 # ─── API publique ────────────────────────────────────────────────────────────
@@ -448,20 +686,25 @@ func _on_jump() -> void:
 	pass   # hook virtuel — override dans les sous-classes
 
 
-# Appelé par combat_system
-func enter_hitstun(knockback: Vector3, duration: float) -> void:
+# Appelé par combat_system — gèle le personnage puis le lance à expiration de _freeze_timer
+func enter_hitstun(knockback_3d: Vector3, duration: float) -> void:
 	if _is_attacking():
 		_attack_hitbox.monitoring = false
-		_attack_shape.disabled    = true     # ← FIX : shape inactif si hit interrompt l'attaque
+		_attack_shape.disabled    = true
 		_attack_timer             = 0.0
+		_hit_delay_timer          = 0.0
+		_down_attack_phase        = 0
 		if debug_mode and _debug_attack_mesh:
 			_debug_attack_mesh.visible = false
+	velocity           = Vector3.ZERO
+	_freeze_timer      = duration        # rafraîchit tout gel en cours
+	_pending_knockback = knockback_3d
 	_set_state(State.HITSTUN)
 	if debug_mode:
-		print("[P%d] HITSTUN %.2fs" % [player_id, duration])
-	velocity       = knockback / weight_multiplier
-	velocity.z     = 0.0
-	_hitstun_timer = duration   # géré frame par frame dans _tick_timers()
+		print("[P%d] HITSTUN %.2fs | combo:%d" % [player_id, duration, combo_count])
+	if debug_mode and _debug_hurt_mesh:
+		var mat := _debug_hurt_mesh.material_override as StandardMaterial3D
+		mat.albedo_color = Color(0.6, 0.2, 0.8, 0.5)   # violet = HITSTUN
 
 
 func die() -> void:
@@ -471,10 +714,13 @@ func die() -> void:
 
 
 func start_respawn_invincibility(duration: float) -> void:
-	is_invincible  = true
-	velocity       = Vector3.ZERO
-	_respawn_timer = duration
-	_blink_timer   = 0.1
+	is_invincible       = true
+	velocity            = Vector3.ZERO
+	_respawn_timer      = duration
+	_blink_timer        = 0.1
+	combo_count         = 0
+	_combo_window_timer = 0.0
+	_freeze_timer       = 0.0
 	_set_state(State.RESPAWNING)
 
 

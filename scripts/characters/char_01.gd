@@ -4,14 +4,12 @@ const AIR_ANIM_DELAY := 0.8
 
 # Paires mirror : clé = animation courante, valeur = sa variante miroir
 const MIRROR_PAIRS : Dictionary = {
-	"Idle"              : "Idle_Mirror",
-	"Idle_Mirror"       : "Idle",
-	"jump"              : "jump_mirror",
-	"jump_mirror"       : "jump",
-	"fall"              : "fall_mirror",
-	"fall_mirror"       : "fall",
-	"crouch_walk"       : "crouch_walk_mirror",
-	"crouch_walk_mirror": "crouch_walk",
+	"Idle"       : "Idle_Mirror",
+	"Idle_Mirror": "Idle",
+	"jump"       : "jump_mirror",
+	"jump_mirror": "jump",
+	"fall"       : "fall_mirror",
+	"fall_mirror": "fall",
 }
 
 # Animations qui doivent boucler en LOOP_LINEAR
@@ -32,6 +30,61 @@ func _ready() -> void:
 	player_id         = 1
 	super._ready()
 	_anim_player = $Model/char_01_MOUVEMENTS/AnimationPlayer
+	_attack_configs = {
+		"ATTACK_LIGHT": {
+			"position"  : Vector3(0.5, 0.7, 0.0),
+			"size"      : Vector3(0.6, 0.4, 0.3),
+			"damage"    : 4.0,
+			"knockback" : 1.5,
+			"duration"  : 0.4,    # hit_delay (0.2) + fenêtre active (0.2)
+			"hit_delay" : 0.2,
+		},
+		"ATTACK_STRONG": {
+			"position"  : Vector3(0.6, 0.5, 0.0),
+			"size"      : Vector3(0.8, 0.6, 0.3),
+			"damage"    : 9.0,
+			"knockback" : 4.0,
+			"duration"  : 0.9,    # hit_delay (0.6) + fenêtre active (0.3)
+			"hit_delay" : 0.6,
+		},
+		"ATTACK_AIR_LIGHT": {
+			# Identique à ATTACK_LIGHT : même portée, même dégâts, même timing
+			"position"  : Vector3(0.5, 0.7, 0.0),
+			"size"      : Vector3(0.6, 0.4, 0.3),
+			"damage"    : 4.0,
+			"knockback" : 1.5,
+			"duration"  : 0.35,   # hit_delay (0.2) + fenêtre active (0.15)
+			"hit_delay" : 0.2,
+		},
+		"ATTACK_AIR_UP": {
+			# Tourbillon vers le haut — hitbox large + impulsion verticale
+			"position"        : Vector3(0.0, 0.7, 0.0),
+			"size"            : Vector3(1.2, 1.2, 0.3),
+			"damage"          : 4.0,
+			"knockback"       : 1.5,
+			"duration"        : 0.5,
+			"velocity_y"      : JUMP_SPEED * 1.6,
+			"knockback_angle" : Vector2(0.0, 1.0),
+		},
+		"ATTACK_AIR_STRONG": {
+			"position"  : Vector3(0.6, 0.7, 0.0),
+			"size"      : Vector3(0.7, 0.7, 0.3),
+			"damage"    : 7.0,
+			"knockback" : 3.0,
+			"duration"  : 0.9,    # hit_delay (0.6) + fenêtre active (0.3)
+			"hit_delay" : 0.6,
+		},
+		"ATTACK_AIR_DOWN": {
+			# Phase 1 (0.4 s gel) + Phase 2 (plongée) — timer géré par _start_attack (99.0)
+			"position"       : Vector3(0.0, -0.4, 0.0),
+			"size"           : Vector3(0.6, 0.5, 0.3),
+			"damage"         : 8.0,
+			"knockback"      : 5.0,
+			"duration"       : 0.3,    # ignorée, remplacée par 99.0 dans _start_attack
+			"knockback_angle": Vector2(0.0, -1.0),
+			"forced_hitstun" : 0.3,
+		},
+	}
 
 
 func _physics_process(delta: float) -> void:
@@ -83,15 +136,14 @@ func _update_animation(delta: float) -> void:
 		State.RUN:
 			target_anim = "run"
 		State.CROUCH:
-			if dir != 0:
-				target_anim = "crouch_walk" if _anim_facing == 1.0 else "crouch_walk_mirror"
-			else:
-				target_anim = "crouch"
+			target_anim = "crouch"
 		State.JUMP, State.FALL:
 			if _air_anim_timer > 0.0:
 				target_anim = "jump" if _anim_facing == 1.0 else "jump_mirror"
 			else:
 				target_anim = "fall" if _anim_facing == 1.0 else "fall_mirror"
+		State.ATTACK_AIR_UP:
+			target_anim = "jump" if _anim_facing == 1.0 else "jump_mirror"
 		_:
 			return   # ATTACK_*, HITSTUN, PARRY, RESPAWNING — garde la dernière animation
 
