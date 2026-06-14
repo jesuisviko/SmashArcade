@@ -1,16 +1,16 @@
 # ACTIONS À CRÉER dans Project Settings → Input Map :
 #
 #   P1 : p1_left  p1_right  p1_up  p1_down
-#         p1_jump  p1_attack_light  p1_attack_strong  p1_parry
+#         p1_jump  p1_attack_light  p1_attack_strong  p1_attack_up  p1_parry
 #
 #   P2 : p2_left  p2_right  p2_up  p2_down
-#         p2_jump  p2_attack_light  p2_attack_strong  p2_parry
+#         p2_jump  p2_attack_light  p2_attack_strong  p2_attack_up  p2_parry
 #
 # Mapping clavier suggéré (à saisir dans l'éditeur, pas hardcodé ici) :
 #   P1 — gauche/droite : Q / D     haut/bas : Z / S
-#        jump : E     attack_light : R     attack_strong : T     parry : F
+#        jump : E     attack_light : R     attack_strong : T     attack_up : F   parry : Space
 #   P2 — gauche/droite : ← / →    haut/bas : ↑ / ↓
-#        jump : KP_0  attack_light : KP_1  attack_strong : KP_2  parry : KP_3
+#        jump : KP_0  attack_light : KP_1  attack_strong : KP_2  attack_up : KP_4  parry : KP_3
 
 extends Node
 
@@ -24,6 +24,7 @@ func get_input(player_id: int) -> Dictionary:
 		"down":          Input.is_action_pressed(p + "down"),
 		"attack_light":  Input.is_action_just_pressed(p + "attack_light"),
 		"attack_strong": Input.is_action_just_pressed(p + "attack_strong"),
+		"attack_up":     Input.is_action_just_pressed(p + "attack_up"),
 		"parry":         Input.is_action_just_pressed(p + "parry"),
 	}
 

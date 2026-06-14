@@ -30,12 +30,14 @@ func _ready() -> void:
 	player_id         = 1
 	super._ready()
 	_anim_player = $Model/char_01_MOUVEMENTS/AnimationPlayer
+	# Knockbacks : buff global ×1.35 (ATTACK_AIR_UP ×2 au préalable). La croissance
+	# avec le % est gérée par CombatSystem (formule exponentielle pow 1.8).
 	_attack_configs = {
 		"ATTACK_LIGHT": {
 			"position"  : Vector3(0.5, 0.7, 0.0),
 			"size"      : Vector3(0.6, 0.4, 0.3),
 			"damage"    : 4.0,
-			"knockback" : 1.5,
+			"knockback" : 2.025,  # 1.5 ×1.35
 			"duration"  : 0.4,    # hit_delay (0.2) + fenêtre active (0.2)
 			"hit_delay" : 0.2,
 		},
@@ -43,16 +45,26 @@ func _ready() -> void:
 			"position"  : Vector3(0.6, 0.5, 0.0),
 			"size"      : Vector3(0.8, 0.6, 0.3),
 			"damage"    : 9.0,
-			"knockback" : 4.0,
+			"knockback" : 5.4,    # 4.0 ×1.35
 			"duration"  : 0.9,    # hit_delay (0.6) + fenêtre active (0.3)
 			"hit_delay" : 0.6,
+		},
+		"ATTACK_UP": {
+			# Attaque montante au sol — bouton dédié (p*_attack_up)
+			"position"        : Vector3(0.0, 1.2, 0.0),
+			"size"            : Vector3(0.7, 0.6, 0.3),
+			"damage"          : 10.0,
+			"knockback"       : 3.31,   # 7.0 ×1.35 ×0.35
+			"duration"        : 0.5,
+			"hit_delay"       : 0.4,
+			"knockback_angle" : Vector2(0.2, 1.0),
 		},
 		"ATTACK_AIR_LIGHT": {
 			# Identique à ATTACK_LIGHT : même portée, même dégâts, même timing
 			"position"  : Vector3(0.5, 0.7, 0.0),
 			"size"      : Vector3(0.6, 0.4, 0.3),
 			"damage"    : 4.0,
-			"knockback" : 1.5,
+			"knockback" : 2.025,  # 1.5 ×1.35
 			"duration"  : 0.35,   # hit_delay (0.2) + fenêtre active (0.15)
 			"hit_delay" : 0.2,
 		},
@@ -61,7 +73,7 @@ func _ready() -> void:
 			"position"        : Vector3(0.0, 0.7, 0.0),
 			"size"            : Vector3(1.2, 1.2, 0.3),
 			"damage"          : 4.0,
-			"knockback"       : 1.5,
+			"knockback"       : 4.05,   # 1.5 ×2 (air_up) ×1.35
 			"duration"        : 0.5,
 			"velocity_y"      : JUMP_SPEED * 1.6,
 			"knockback_angle" : Vector2(0.0, 1.0),
@@ -70,7 +82,7 @@ func _ready() -> void:
 			"position"  : Vector3(0.6, 0.7, 0.0),
 			"size"      : Vector3(0.7, 0.7, 0.3),
 			"damage"    : 7.0,
-			"knockback" : 3.0,
+			"knockback" : 4.05,   # 3.0 ×1.35
 			"duration"  : 0.9,    # hit_delay (0.6) + fenêtre active (0.3)
 			"hit_delay" : 0.6,
 		},
@@ -79,7 +91,7 @@ func _ready() -> void:
 			"position"       : Vector3(0.0, -0.4, 0.0),
 			"size"           : Vector3(0.6, 0.5, 0.3),
 			"damage"         : 8.0,
-			"knockback"      : 5.0,
+			"knockback"      : 6.75,   # 5.0 ×1.35
 			"duration"       : 0.3,    # ignorée, remplacée par 99.0 dans _start_attack
 			"knockback_angle": Vector2(0.0, -1.0),
 			"forced_hitstun" : 0.3,

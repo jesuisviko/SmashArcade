@@ -22,8 +22,8 @@ const MAX_JUMPS  := 2
 @export var attack_light_knockback          := 0.5
 @export var attack_strong_knockback         := 3.0
 @export var attack_duration                 := 0.2
-@export var parry_duration                  := 0.15
-@export var parry_cooldown                  := 0.5
+@export var parry_duration                  := 1.4
+@export var parry_cooldown                  := 6.0
 @export var debug_mode              : bool  = false
 
 var state            : State = State.IDLE
@@ -38,8 +38,9 @@ var _up_was_pressed  : bool  = false
 var _air_up_used     : bool  = false   # un seul ATTACK_AIR_UP avant de retoucher le sol
 var _air_down_used   : bool  = false   # un seul ATTACK_AIR_DOWN avant de retoucher le sol
 var _attack_timer    : float = 0.0
-var _parry_timer     : float = 0.0
-var _parry_cd_timer  : float = 0.0
+var _parry_timer          : float = 0.0
+var _parry_cooldown_timer : float = 0.0
+var _parry_light_hits     : int   = 0
 var _post_hitstun_grace    : float = 0.0
 var _respawn_timer         : float = 0.0
 var _blink_timer           : float = 0.0
@@ -47,11 +48,17 @@ var _soft_drop_timer          : float = 0.0
 var _hit_delay_timer          : float = 0.0
 var _down_attack_phase        : int   = 0     # 0=inactif, 1=gel, 2=plongée
 var _down_attack_freeze_timer : float = 0.0
+var _attack_started_on_floor  : bool  = false
 
 var combo_count          : int     = 0
 var _combo_window_timer  : float   = 0.0    # 1 s pour compter un coup dans le combo
 var _freeze_timer        : float   = 0.0    # gel du hitstun — knockback appliqué à expiration
 var _pending_knockback   : Vector3 = Vector3.ZERO
+var _knockback_gravity_timer : float = 0.0   # >0 = gravité réduite (Phase 1, 2 s après un knockback)
+var _post_knockback_landing  : bool  = true  # false du lancement du knockback jusqu'à l'atterrissage
+var _knockback_momentum           : float = 0.0   # magnitude horizontale stockée au lancement
+var _was_on_floor                 : bool  = false # front montant d'atterrissage
+var _hitstun_preserve_velocity    : bool  = false # true = gravité active + velocity conservée pendant HITSTUN
 
 var _multihit_tick_timer      : float           = 0.0
 var _is_juggled               : bool            = false
@@ -156,7 +163,7 @@ func _setup_debug_meshes() -> void:
 	var mat_parry              := StandardMaterial3D.new()
 	mat_parry.transparency      = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat_parry.shading_mode      = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat_parry.albedo_color      = Color(0.2, 0.4, 1.0, 0.4)
+	mat_parry.albedo_color      = Color(0.2, 0.4, 1.0, 0.3)
 	_debug_parry_mesh.material_override = mat_parry
 	_debug_parry_mesh.position          = Vector3(0.0, char_height / 2.0, 0.0)
 	_debug_parry_mesh.visible           = false
@@ -190,13 +197,14 @@ func _tick_timers(delta: float) -> void:
 		if _attack_timer <= 0.0:
 			_end_attack()
 
-	if _parry_timer > 0.0:
+	if state == State.PARRY and _parry_timer > 0.0:
 		_parry_timer -= delta
 		if _parry_timer <= 0.0:
-			_end_parry()
+			_set_state(State.IDLE)
+			_parry_cooldown_timer = parry_cooldown
 
-	if _parry_cd_timer > 0.0:
-		_parry_cd_timer -= delta
+	if _parry_cooldown_timer > 0.0:
+		_parry_cooldown_timer -= delta
 
 	if _soft_drop_timer > 0.0:
 		_soft_drop_timer -= delta
@@ -229,10 +237,17 @@ func _tick_timers(delta: float) -> void:
 	if _freeze_timer > 0.0:
 		_freeze_timer -= delta
 		if _freeze_timer <= 0.0 and state == State.HITSTUN:
-			velocity            = _pending_knockback / weight_multiplier
-			velocity.z          = 0.0
+			if not _hitstun_preserve_velocity:
+				velocity   = _pending_knockback / weight_multiplier
+				velocity.z = 0.0
+			_hitstun_preserve_velocity = false
 			combo_count         = 0
 			_combo_window_timer = 0.0
+			# Knockback appliqué → gravité réduite (Phase 1) jusqu'à l'atterrissage
+			if _pending_knockback != Vector3.ZERO:
+				_knockback_gravity_timer = 2.0
+				_post_knockback_landing  = false
+				_knockback_momentum      = abs(_pending_knockback.x / weight_multiplier)
 			_end_hitstun()
 
 	# Multi-hit ATTACK_AIR_UP — piloté par timer, indépendant de area_entered
@@ -281,7 +296,10 @@ func _handle_attack_input(input: Dictionary) -> void:
 	if state == State.HITSTUN or _is_attacking() or state == State.PARRY or state == State.RESPAWNING:
 		return
 
-	if input["attack_light"]:
+	if input["attack_up"] and is_on_floor():
+		if not _air_up_used:
+			_start_attack(State.ATTACK_UP)
+	elif input["attack_light"]:
 		var s: State = State.ATTACK_LIGHT
 		if is_on_floor():
 			if input["down"]: s = State.ATTACK_DOWN
@@ -311,12 +329,15 @@ func _handle_attack_input(input: Dictionary) -> void:
 			_start_attack(s)
 			if s == State.ATTACK_AIR_UP: _air_up_used = true
 
-	elif input["parry"]:
-		_start_parry()
+	elif input["parry"] and _parry_cooldown_timer <= 0.0 and state != State.HITSTUN and state != State.PARRY:
+		_set_state(State.PARRY)
+		_parry_timer      = parry_duration
+		_parry_light_hits = 0
 
 
 func _start_attack(new_state: State) -> void:
 	_set_state(new_state)
+	_attack_started_on_floor  = is_on_floor()
 	_active_attack_config     = {}
 	_hit_delay_timer          = 0.0
 	_down_attack_phase        = 0
@@ -395,6 +416,7 @@ func _start_attack(new_state: State) -> void:
 
 
 func _end_attack() -> void:
+	_attack_started_on_floor = false
 	# ATTACK_AIR_UP : libère les cibles jugglées — le dernier hit (apply_hit) les
 	# propulse via la résolution normale du hitstun (_freeze_timer)
 	if state == State.ATTACK_AIR_UP:
@@ -448,24 +470,6 @@ func _is_attacking() -> bool:
 
 # ─── Parry ───────────────────────────────────────────────────────────────────
 
-func _start_parry() -> void:
-	if _parry_cd_timer > 0.0:
-		return
-	_set_state(State.PARRY)
-	is_invincible = true
-	_parry_timer  = parry_duration
-	if debug_mode and _debug_parry_mesh:
-		_debug_parry_mesh.visible = true
-
-
-func _end_parry() -> void:
-	is_invincible   = false
-	_parry_cd_timer = parry_cooldown
-	if debug_mode and _debug_parry_mesh:
-		_debug_parry_mesh.visible = false
-	if state == State.PARRY:
-		_set_state(State.IDLE)
-
 
 # ─── Physique ────────────────────────────────────────────────────────────────
 
@@ -481,25 +485,51 @@ func _apply_gravity(delta: float) -> void:
 	if _is_juggled:
 		velocity = Vector3.ZERO
 		return
-	if state == State.HITSTUN:
+	if state == State.HITSTUN and not _hitstun_preserve_velocity:
 		return   # velocity figée à zéro pendant le gel — gravité reprend à l'expiration du _freeze_timer
-	elif is_on_floor():
+
+	# Gravité réduite après un knockback (timer armé dans _tick_timers)
+	if not is_on_floor():
+		if _knockback_gravity_timer > 0.0:
+			# Phase 1 : 2 s après le knockback → gravité / 2
+			_knockback_gravity_timer -= delta
+			velocity.y -= (GRAVITY / 2.0) * delta
+			return
+		elif not _post_knockback_landing and state == State.FALL:
+			# Phase 2 : timer écoulé, descente jusqu'au sol → gravité / 1.5
+			velocity.y -= (GRAVITY / 1.5) * delta
+			return
+
+	if is_on_floor():
 		if velocity.y < 0.0:
 			velocity.y = 0.0
 		jumps_left = MAX_JUMPS
+		if not _post_knockback_landing:
+			# Fin de la séquence de knockback : réarme la gravité normale
+			_post_knockback_landing  = true
+			_knockback_gravity_timer = 0.0
 	else:
 		velocity.y -= GRAVITY * delta
 
 
 func _apply_movement(input: Dictionary, delta: float) -> void:
+	# Front montant d'atterrissage : friction instantanée 80% sur le momentum knockback
+	if is_on_floor() and not _was_on_floor and _knockback_momentum > 0.0:
+		_knockback_momentum *= 0.2
+		velocity.x          *= 0.2
+	_was_on_floor = is_on_floor()
+
 	# Décélération rapide au sol pendant une attaque — le personnage freine mais ne peut pas se déplacer
 	if (state == State.ATTACK_LIGHT or state == State.ATTACK_STRONG \
 			or state == State.ATTACK_UP or state == State.ATTACK_DOWN) and is_on_floor():
 		velocity.x      = lerp(velocity.x, 0.0, 0.3)
 		_up_was_pressed = input["up"]
 		return
-	if _is_juggled or state == State.HITSTUN or state == State.PARRY \
-			or state == State.RESPAWNING or state == State.CROUCH:
+	if state == State.PARRY:
+		velocity.x      = lerp(velocity.x, 0.0, 0.3)
+		_up_was_pressed = input["up"]
+		return
+	if _is_juggled or state == State.HITSTUN or state == State.RESPAWNING or state == State.CROUCH:
 		_up_was_pressed = input["up"]
 		return
 	# ATTACK_AIR_UP : mouvement horizontal libre, saut bloqué — tous les autres états attaquants bloqués
@@ -509,12 +539,18 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 
 	var dir          := int(input["right"]) - int(input["left"])
 	var target_speed := float(dir) * char_speed
-	var accel        := 12.0 if dir != 0 else 20.0
-	if _post_hitstun_grace > 0.0:
-		_post_hitstun_grace -= delta
-		velocity.x = lerp(velocity.x, target_speed, 0.08)
+	if _knockback_momentum > 0.0:
+		var resistance  : float = clamp(_knockback_momentum / char_speed, 0.5, 8.0)
+		var lerp_factor : float = 0.015 / resistance
+		velocity.x          = lerp(velocity.x, target_speed, lerp_factor)
+		var decay_rate  : float = max(0.005, 0.03 - damage_percent * 0.0001)
+		_knockback_momentum = lerp(_knockback_momentum, 0.0, decay_rate)
+		if _knockback_momentum < 0.1:
+			_knockback_momentum = 0.0
 	else:
-		velocity.x = lerp(velocity.x, target_speed, accel * delta)
+		var accel := 12.0 if dir != 0 else 20.0
+		var changing_dir := dir != 0 and ((dir > 0 and velocity.x < 0.0) or (dir < 0 and velocity.x > 0.0))
+		velocity.x = lerp(velocity.x, target_speed, accel * (0.8 if changing_dir else 1.0) * delta)
 	if input["right"]:
 		facing_direction = 1.0
 	elif input["left"]:
@@ -583,6 +619,8 @@ func _set_state(new_state: State) -> void:
 	]:
 		print("[P%d] %s → %s" % [player_id, State.find_key(state), State.find_key(new_state)])
 	state = new_state
+	if debug_mode and _debug_parry_mesh:
+		_debug_parry_mesh.visible = (new_state == State.PARRY)
 	# Entrée en CROUCH : réduire la CollisionShape et démarrer le soft drop
 	if new_state == State.CROUCH:
 		_start_crouch(prev_state)
@@ -614,17 +652,17 @@ func _on_attack_hitbox_area_entered(area: Area3D) -> void:
 		if _active_attack_config.has("knockback_angle"):
 			knockback_angle = _active_attack_config["knockback_angle"]
 		else:
-			knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.3).normalized()
+			knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.5).normalized()
 	else:
 		match state:
 			State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT:
 				damage          = attack_light_damage
 				base_knockback  = attack_light_knockback
-				knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.3).normalized()
+				knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.5).normalized()
 			State.ATTACK_STRONG, State.ATTACK_AIR_STRONG:
 				damage          = attack_strong_damage
 				base_knockback  = attack_strong_knockback
-				knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.3).normalized()
+				knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.5).normalized()
 			State.ATTACK_UP, State.ATTACK_AIR_UP:
 				damage          = attack_light_damage
 				base_knockback  = attack_light_knockback

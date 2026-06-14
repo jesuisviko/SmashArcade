@@ -72,7 +72,7 @@ shape = SubResource("Shape_side")
 [node name="DeathZones" type="Node3D" parent="."]
 
 [node name="BottomZone" type="Area3D" parent="DeathZones"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8.8, 0)
 collision_layer = 0
 monitorable = false
 
@@ -84,7 +84,7 @@ material_override = SubResource("Mat_kill_h")
 mesh = SubResource("Mesh_kill_h")
 
 [node name="LeftZone" type="Area3D" parent="DeathZones"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25.3, 0, 0)
 collision_layer = 0
 monitorable = false
 
@@ -96,7 +96,7 @@ material_override = SubResource("Mat_kill_side")
 mesh = SubResource("Mesh_kill_side")
 
 [node name="RightZone" type="Area3D" parent="DeathZones"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25.3, 0, 0)
 collision_layer = 0
 monitorable = false
 
@@ -108,7 +108,7 @@ material_override = SubResource("Mat_kill_side")
 mesh = SubResource("Mesh_kill_side")
 
 [node name="TopZone" type="Area3D" parent="DeathZones"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 15, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 19.8, 0)
 collision_layer = 0
 monitorable = false
 
