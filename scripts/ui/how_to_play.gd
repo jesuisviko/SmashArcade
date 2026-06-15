@@ -22,7 +22,7 @@ func _process(_delta: float) -> void:
 		_p2_ready_label.text = "P2 : PRÊT  ✓"
 		_p2_ready_label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5))
 	if _p1_ready and _p2_ready:
-		get_tree().change_scene_to_file(SCENE_NEXT)
+		get_node("/root/SceneTransition").transition_to(SCENE_NEXT)
 
 func _any_just_pressed(player_id: int) -> bool:
 	var prefix := "p%d_" % player_id

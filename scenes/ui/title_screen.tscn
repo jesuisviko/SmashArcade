@@ -27,10 +27,9 @@ texture = ExtResource("3_logo")
 stretch_mode = 5
 
 [node name="SubtitleLabel" type="Label" parent="."]
-offset_left = -2.0
-offset_top = 413.0
-offset_right = 1153.0
-offset_bottom = 474.0
+offset_top = 419.0
+offset_right = 1155.0
+offset_bottom = 480.0
 theme_override_colors/font_color = Color(0, 0.84952337, 0.8950924, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/line_spacing = 4

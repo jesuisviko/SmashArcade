@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://cs6wcdsqiw5ke"]
 
-[ext_resource type="Script" path="res://scripts/ui/mode_select.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://crjhfam32fbfh" path="res://scripts/ui/mode_select.gd" id="1_script"]
 
 [node name="ModeSelect" type="Node2D"]
 script = ExtResource("1_script")
@@ -11,38 +11,34 @@ offset_bottom = 720.0
 color = Color(0, 0, 0, 1)
 
 [node name="TitleLabel" type="Label" parent="."]
-offset_left = 0.0
 offset_top = 80.0
 offset_right = 1280.0
 offset_bottom = 180.0
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 60
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 60
 text = "MODE DE JEU"
+horizontal_alignment = 1
 
 [node name="Option0" type="Label" parent="."]
-offset_left = 0.0
 offset_top = 280.0
 offset_right = 1280.0
 offset_bottom = 340.0
-horizontal_alignment = 1
 theme_override_font_sizes/font_size = 40
 text = "3 VIES"
+horizontal_alignment = 1
 
 [node name="Option1" type="Label" parent="."]
-offset_left = 0.0
 offset_top = 360.0
 offset_right = 1280.0
 offset_bottom = 420.0
-horizontal_alignment = 1
 theme_override_font_sizes/font_size = 40
 text = "TEMPS"
+horizontal_alignment = 1
 
 [node name="Option2" type="Label" parent="."]
-offset_left = 0.0
 offset_top = 440.0
 offset_right = 1280.0
 offset_bottom = 500.0
-horizontal_alignment = 1
 theme_override_font_sizes/font_size = 40
 text = "CUSTOM"
+horizontal_alignment = 1

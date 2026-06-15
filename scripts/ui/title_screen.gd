@@ -11,7 +11,7 @@ func _process(delta: float) -> void:
 	$SubtitleLabel.scale = Vector2(s, s)
 
 	if _any_button_just_pressed():
-		get_tree().change_scene_to_file("res://scenes/ui/mode_select.tscn")
+		get_node("/root/SceneTransition").transition_to("res://scenes/ui/mode_select.tscn")
 
 func _any_button_just_pressed() -> bool:
 	for action in ["p1_attack_light", "p1_attack_strong", "p1_parry",

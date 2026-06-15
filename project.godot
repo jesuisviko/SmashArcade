@@ -21,6 +21,7 @@ config/run/main_scene="res://scenes/ui/title_screen.tscn"
 InputManager="*res://scripts/systems/input_manager.gd"
 CombatSystem="*res://scripts/systems/combat_system.gd"
 GameManager="*res://scripts/systems/game_manager.gd"
+SceneTransition="*res://scripts/systems/scene_transition.gd"
 
 [input]
 

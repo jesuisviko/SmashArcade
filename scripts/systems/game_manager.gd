@@ -93,4 +93,4 @@ func game_over(loser_id: int) -> void:
 	Engine.time_scale = 0.2
 	await get_tree().create_timer(4.0 * Engine.time_scale).timeout
 	Engine.time_scale = 1.0
-	get_tree().change_scene_to_file("res://scenes/ui/game_over.tscn")
+	get_node("/root/SceneTransition").transition_to("res://scenes/ui/game_over.tscn")

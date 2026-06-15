@@ -27,7 +27,7 @@ func _process(_delta: float) -> void:
 	if Input.is_action_just_pressed("p1_attack_light") or Input.is_action_just_pressed("p2_attack_light"):
 		if _enabled[_selected]:
 			GameManager.selected_mode = MODES[_selected]
-			get_tree().change_scene_to_file(SCENE_NEXT)
+			get_node("/root/SceneTransition").transition_to(SCENE_NEXT)
 
 func _move(dir: int) -> void:
 	_selected = (_selected + dir + _labels.size()) % _labels.size()

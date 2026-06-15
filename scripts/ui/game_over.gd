@@ -27,7 +27,7 @@ func _process(_delta: float) -> void:
 		_selected = min(1, _selected + 1)
 		_refresh()
 	if Input.is_action_just_pressed("p1_attack_light") or Input.is_action_just_pressed("p2_attack_light"):
-		get_tree().change_scene_to_file(DESTINATIONS[_selected])
+		get_node("/root/SceneTransition").transition_to(DESTINATIONS[_selected])
 
 func _refresh() -> void:
 	for i in _options.size():
