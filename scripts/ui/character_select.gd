@@ -1,78 +1,101 @@
 extends Node2D
 
-const SCENE_NEXT  := "res://scenes/ui/how_to_play.tscn"
-const CHAR_NAMES  := ["PERSO 1", "PERSO 2", "PERSO 3", "PERSO 4"]
-const CHAR_COLORS := [
-	Color(0.85, 0.2,  0.2,  1.0),
-	Color(0.2,  0.2,  0.85, 1.0),
-	Color(0.2,  0.75, 0.2,  1.0),
-	Color(0.85, 0.75, 0.1,  1.0),
+const SCENE_NEXT := "res://scenes/ui/how_to_play.tscn"
+
+const CHAR_POSES := [
+	preload("res://assets/textures/characters/char_01_pose.png"),
+	preload("res://assets/textures/ui/unknown_character.png"),
+	preload("res://assets/textures/ui/unknown_character.png"),
+	preload("res://assets/textures/ui/unknown_character.png"),
+]
+const CHAR_POSES_MIRROR := [
+	preload("res://assets/textures/characters/char_01_pose_mirror.png"),
+	preload("res://assets/textures/ui/unknown_character.png"),
+	preload("res://assets/textures/ui/unknown_character.png"),
+	preload("res://assets/textures/ui/unknown_character.png"),
 ]
 
-@onready var _slot0    : Node2D = $Slot0
-@onready var _slot1    : Node2D = $Slot1
-@onready var _slot2    : Node2D = $Slot2
-@onready var _slot3    : Node2D = $Slot3
-@onready var _p1_label : Label  = $P1Cursor
-@onready var _p2_label : Label  = $P2Cursor
-@onready var _status   : Label  = $StatusLabel
+@onready var _p1_splash : TextureRect    = $P1Splash
+@onready var _p2_splash : TextureRect    = $P2Splash
+@onready var _p1_cursor : Control        = $P1Cursor
+@onready var _p2_cursor : Control        = $P2Cursor
+@onready var _slots     : Array[Control] = [
+	$CharacterGrid/Slot1,
+	$CharacterGrid/Slot2,
+	$CharacterGrid/Slot3,
+	$CharacterGrid/Slot4,
+]
 
-var _slots  : Array[Node2D]
-var _p1_idx : int  = 0
-var _p2_idx : int  = 1
-var _p1_ok  : bool = false
-var _p2_ok  : bool = false
+var p1_idx         : int   = 0
+var p2_idx         : int   = 0
+var _p1_confirmed  : bool  = false
+var _p2_confirmed  : bool  = false
+var _blink_timer   : float = 0.4
+var _blink_visible : bool  = true
+var _transitioning : bool  = false
+
 
 func _ready() -> void:
-	_slots = [_slot0, _slot1, _slot2, _slot3]
-	_refresh()
+	_update_cursors()
+	_update_splashes()
 
-func _process(_delta: float) -> void:
-	if not _p1_ok:
-		if Input.is_action_just_pressed("p1_left"):
-			_p1_idx = (_p1_idx - 1 + 4) % 4
-			_refresh()
-		elif Input.is_action_just_pressed("p1_right"):
-			_p1_idx = (_p1_idx + 1) % 4
-			_refresh()
-		elif Input.is_action_just_pressed("p1_attack_light"):
-			_p1_ok = true
-			_refresh()
-	if not _p2_ok:
-		if Input.is_action_just_pressed("p2_left"):
-			_p2_idx = (_p2_idx - 1 + 4) % 4
-			_refresh()
-		elif Input.is_action_just_pressed("p2_right"):
-			_p2_idx = (_p2_idx + 1) % 4
-			_refresh()
-		elif Input.is_action_just_pressed("p2_attack_light"):
-			_p2_ok = true
-			_refresh()
-	if _p1_ok and _p2_ok:
-		GameManager.p1_character = _p1_idx + 1   # 0-based → 1-based (1-4)
-		GameManager.p2_character = _p2_idx + 1
+
+func _process(delta: float) -> void:
+	# P1 navigation — annule la confirmation si on bouge
+	if Input.is_action_just_pressed("p1_left"):
+		p1_idx        = max(0, p1_idx - 1)
+		_p1_confirmed = false
+		_update_splashes()
+	elif Input.is_action_just_pressed("p1_right"):
+		p1_idx        = min(3, p1_idx + 1)
+		_p1_confirmed = false
+		_update_splashes()
+	if Input.is_action_just_pressed("p1_attack_light"):
+		_p1_confirmed = not _p1_confirmed
+
+	# P2 navigation
+	if Input.is_action_just_pressed("p2_left"):
+		p2_idx        = max(0, p2_idx - 1)
+		_p2_confirmed = false
+		_update_splashes()
+	elif Input.is_action_just_pressed("p2_right"):
+		p2_idx        = min(3, p2_idx + 1)
+		_p2_confirmed = false
+		_update_splashes()
+	if Input.is_action_just_pressed("p2_attack_light"):
+		_p2_confirmed = not _p2_confirmed
+
+	# Blink timer
+	_blink_timer -= delta
+	if _blink_timer <= 0.0:
+		_blink_visible = not _blink_visible
+		_blink_timer   = 0.4
+
+	# Visibilité des curseurs
+	_p1_cursor.visible = _blink_visible if _p1_confirmed else true
+	_p2_cursor.visible = _blink_visible if _p2_confirmed else true
+
+	_update_cursors()
+
+	if _p1_confirmed and _p2_confirmed and not _transitioning:
+		_transitioning = true
+		GameManager.p1_character = p1_idx + 1
+		GameManager.p2_character = p2_idx + 1
 		get_node("/root/SceneTransition").transition_to(SCENE_NEXT)
 
-func _refresh() -> void:
-	for i in _slots.size():
-		var box   := _slots[i].get_node("Box") as ColorRect
-		var lbl   := _slots[i].get_node("NameLabel") as Label
-		box.color = CHAR_COLORS[i]
-		lbl.text  = CHAR_NAMES[i]
-		var hovered   : bool = (i == _p1_idx and not _p1_ok) or (i == _p2_idx and not _p2_ok)
-		var confirmed : bool = (_p1_ok and _p1_idx == i) or (_p2_ok and _p2_idx == i)
-		_slots[i].modulate = Color.WHITE if (hovered or confirmed) else Color(0.4, 0.4, 0.4, 1.0)
-	_p1_label.text = "P1  →  " + CHAR_NAMES[_p1_idx] + ("  ✓" if _p1_ok else "")
-	_p2_label.text = "P2  →  " + CHAR_NAMES[_p2_idx] + ("  ✓" if _p2_ok else "")
-	_p1_label.add_theme_color_override("font_color",
-		Color(0.5, 1.0, 0.5) if _p1_ok else Color(1.0, 0.7, 0.7))
-	_p2_label.add_theme_color_override("font_color",
-		Color(0.5, 1.0, 0.5) if _p2_ok else Color(0.7, 0.7, 1.0))
-	if _p1_ok and _p2_ok:
-		_status.text = "Les deux joueurs prêts..."
-	elif _p1_ok:
-		_status.text = "P1 prêt — P2 : confirme !"
-	elif _p2_ok:
-		_status.text = "P2 prêt — P1 : confirme !"
-	else:
-		_status.text = "Naviguez avec ←→     Confirmez : Bouton 1"
+
+func _get_slot(idx: int) -> Control:
+	return _slots[idx]
+
+
+func _update_cursors() -> void:
+	var s1 := _get_slot(p1_idx)
+	_p1_cursor.global_position = s1.global_position
+
+	var s2 := _get_slot(p2_idx)
+	_p2_cursor.global_position = s2.global_position + Vector2(s2.size.x - 40, 0)
+
+
+func _update_splashes() -> void:
+	_p1_splash.texture = CHAR_POSES[p1_idx]
+	_p2_splash.texture = CHAR_POSES_MIRROR[p2_idx]
