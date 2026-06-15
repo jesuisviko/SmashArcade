@@ -3,40 +3,37 @@ extends Node2D
 const SCENE_NEXT := "res://scenes/ui/character_select.tscn"
 const MODES      := ["3_vies", "temps", "custom"]
 
-@onready var _opt0 : Label = $Option0
-@onready var _opt1 : Label = $Option1
-@onready var _opt2 : Label = $Option2
+@onready var _icon3v : TextureRect = $Icon3Vies
+@onready var _icon5m : TextureRect = $Icon5Min
+@onready var _iconcu : TextureRect = $IconCustom
 
-const COLOR_SELECTED := Color(1.0, 1.0, 0.0, 1.0)
-const COLOR_ENABLED  := Color(1.0, 1.0, 1.0, 1.0)
-const COLOR_DISABLED := Color(0.35, 0.35, 0.35, 1.0)
-
-var _enabled  := [true, false, false]
-var _selected : int = 0
-var _labels   : Array[Label]
+var _selected    : int   = 0
+var _pulse_timer : float = 0.0
+var _icons       : Array
 
 func _ready() -> void:
-	_labels = [_opt0, _opt1, _opt2]
-	_refresh()
+	_icons = [_icon3v, _icon5m, _iconcu]
+	_icon5m.modulate = Color(0.5, 0.5, 0.5, 1.0)
+	_iconcu.modulate = Color(0.5, 0.5, 0.5, 1.0)
 
-func _process(_delta: float) -> void:
-	if Input.is_action_just_pressed("p1_up") or Input.is_action_just_pressed("p2_up"):
-		_move(-1)
-	if Input.is_action_just_pressed("p1_down") or Input.is_action_just_pressed("p2_down"):
-		_move(1)
+func _process(delta: float) -> void:
+	_pulse_timer += delta
+
+	for i in range(_icons.size()):
+		if i == _selected:
+			var s := 1.0 + sin(_pulse_timer * PI / 2.0 * 1.5) * 0.048
+			_icons[i].scale        = Vector2(s, s)
+			_icons[i].pivot_offset = _icons[i].size / 2
+		else:
+			_icons[i].scale = Vector2(1.0, 1.0)
+
+	if Input.is_action_just_pressed("p1_left") or Input.is_action_just_pressed("p2_left"):
+		_selected    = max(0, _selected - 1)
+		_pulse_timer = 0.0
+	if Input.is_action_just_pressed("p1_right") or Input.is_action_just_pressed("p2_right"):
+		_selected    = min(2, _selected + 1)
+		_pulse_timer = 0.0
 	if Input.is_action_just_pressed("p1_attack_light") or Input.is_action_just_pressed("p2_attack_light"):
-		if _enabled[_selected]:
-			GameManager.selected_mode = MODES[_selected]
+		if _selected == 0:
+			GameManager.selected_mode = MODES[0]
 			get_node("/root/SceneTransition").transition_to(SCENE_NEXT)
-
-func _move(dir: int) -> void:
-	_selected = (_selected + dir + _labels.size()) % _labels.size()
-	_refresh()
-
-func _refresh() -> void:
-	for i in _labels.size():
-		var col: Color
-		if   i == _selected: col = COLOR_SELECTED
-		elif _enabled[i]:    col = COLOR_ENABLED
-		else:                col = COLOR_DISABLED
-		_labels[i].add_theme_color_override("font_color", col)
