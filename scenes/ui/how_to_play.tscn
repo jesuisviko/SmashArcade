@@ -1,92 +1,105 @@
-[gd_scene load_steps=2 format=3 uid="uid://dkb18hoh567yw"]
+[gd_scene load_steps=4 format=3 uid="uid://dkb18hoh567yw"]
 
-[ext_resource type="Script" path="res://scripts/ui/how_to_play.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://b4a35vpty73km" path="res://scripts/ui/how_to_play.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://daiq6mvi34acu" path="res://assets/textures/ui/paladins.ttf" id="2_svix1"]
+[ext_resource type="Texture2D" uid="uid://bs66s8c0qhu23" path="res://assets/textures/ui/HOW_TO_PLAY.png" id="3_image"]
 
 [node name="HowToPlay" type="Node2D"]
 script = ExtResource("1_script")
 
 [node name="Background" type="ColorRect" parent="."]
-offset_right = 1280.0
-offset_bottom = 720.0
+offset_right = 1149.0
+offset_bottom = 648.0
 color = Color(0, 0, 0, 1)
 
 [node name="TitleLabel" type="Label" parent="."]
-offset_left = 0.0
-offset_top = 40.0
-offset_right = 1280.0
-offset_bottom = 120.0
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 56
+offset_left = 1.0
+offset_top = 27.0
+offset_right = 1148.0
+offset_bottom = 107.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_svix1")
+theme_override_font_sizes/font_size = 56
 text = "COMMENT JOUER"
+horizontal_alignment = 1
 
-[node name="Row0" type="Label" parent="."]
-offset_left = 200.0
-offset_top = 170.0
-offset_right = 1080.0
-offset_bottom = 210.0
-theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
-text = "Joystick gauche / droite   ->   Deplacement"
-
-[node name="Row1" type="Label" parent="."]
-offset_left = 200.0
-offset_top = 230.0
-offset_right = 1080.0
-offset_bottom = 270.0
-theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
-text = "Joystick haut              ->   Saut / Double saut"
-
-[node name="Row2" type="Label" parent="."]
-offset_left = 200.0
-offset_top = 290.0
-offset_right = 1080.0
-offset_bottom = 330.0
-theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
-text = "Bouton 1                   ->   Attaque legere"
-
-[node name="Row3" type="Label" parent="."]
-offset_left = 200.0
-offset_top = 350.0
-offset_right = 1080.0
-offset_bottom = 390.0
-theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
-text = "Bouton 2                   ->   Attaque forte"
-
-[node name="Row4" type="Label" parent="."]
-offset_left = 200.0
-offset_top = 410.0
-offset_right = 1080.0
-offset_bottom = 450.0
-theme_override_font_sizes/font_size = 28
-theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
-text = "Bouton 3                   ->   Parry (parade)"
+[node name="HowToPlayImage" type="TextureRect" parent="."]
+offset_left = 40.0
+offset_top = 35.0
+offset_right = 650.0
+offset_bottom = 563.0
+texture = ExtResource("3_image")
+expand_mode = 1
+stretch_mode = 5
 
 [node name="PromptLabel" type="Label" parent="."]
-offset_left = 0.0
-offset_top = 515.0
-offset_right = 1280.0
-offset_bottom = 560.0
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 26
-theme_override_colors/font_color = Color(0.75, 0.75, 0.75, 1)
+offset_left = -258.0
+offset_top = 554.00006
+offset_right = 1000.17346
+offset_bottom = 599.00006
+rotation = -0.0036632258
+theme_override_colors/font_color = Color(0, 0.8509804, 0.89411765, 1)
+theme_override_fonts/font = ExtResource("2_svix1")
+theme_override_font_sizes/font_size = 18
 text = "P1 et P2 : appuyez sur un bouton pour commencer"
+horizontal_alignment = 1
 
 [node name="P1Ready" type="Label" parent="."]
-offset_left = 200.0
-offset_top = 590.0
-offset_right = 620.0
-offset_bottom = 630.0
-theme_override_font_sizes/font_size = 24
+offset_left = 17.0
+offset_top = 576.0
+offset_right = 180.0
+offset_bottom = 604.0
+theme_override_font_sizes/font_size = 20
 text = "P1 : En attente..."
 
 [node name="P2Ready" type="Label" parent="."]
-offset_left = 660.0
-offset_top = 590.0
-offset_right = 1080.0
-offset_bottom = 630.0
-theme_override_font_sizes/font_size = 24
+offset_left = 16.0
+offset_top = 607.0
+offset_right = 199.0
+offset_bottom = 635.0
+theme_override_font_sizes/font_size = 20
 text = "P2 : En attente..."
+
+[node name="Règles" type="Label" parent="."]
+offset_left = 668.0
+offset_top = 155.0
+offset_right = 1129.0
+offset_bottom = 507.0
+text = "- joystick vers le haut = saut 
+- joystick vers le bas = s'accroupir. (pas de crouch walk!)
+
+En l'air : 
+- attaque légère (rouge) + joystick haut = attaque montante
+- attaque lég-re + joystick bas = attaque descendante
+- une seule attaque montante en l'air, reset au sol
+
+PARRYS (IMPORTANT) : différent de smash / SF
+- un parry toutes les 6s - Durée : 1.4s
+- Si parry d'une attaque verticale ou descendante : stun 1.5s
+- Si parry 2 attaques légères : stun 1.5s
+- Pendant le parry : knockback / dégats réduits de 95/90%
+"
+
+[node name="règles_title" type="Label" parent="."]
+offset_left = 770.0
+offset_top = 111.0
+offset_right = 1148.0
+offset_bottom = 174.0
+theme_override_fonts/font = ExtResource("2_svix1")
+theme_override_font_sizes/font_size = 32
+text = "règles"
+
+[node name="disclaimer" type="Label" parent="."]
+offset_left = 741.0
+offset_top = 528.0
+offset_right = 1145.0
+offset_bottom = 665.0
+theme_override_colors/font_color = Color(1, 0.602556, 0.5189755, 1)
+theme_override_font_sizes/font_size = 12
+text = "ATTENTION. 
+Il s'agit d'une version du jeu en développement.
+L'aspect visuel du jeu est susceptible de changer drastiquement
+dans le futur. 
+veuillez vous attendre a des bugs et des mécaniques pas finies. 
+n'hésitez pas a faire remonter les bugs, ou suggérer des changements
+"
