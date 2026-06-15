@@ -170,14 +170,12 @@ func _update_animation(delta: float) -> void:
 	if target_anim in LOOP_LINEAR_ANIMS and _anim_player.has_animation(target_anim):
 		_anim_player.get_animation(target_anim).loop_mode = Animation.LOOP_LINEAR
 
-	# Mirror swap seamless vs crossfade
+	# Swap mirror/normal : blend court — un seek() annulerait le crossfade
 	if MIRROR_PAIRS.get(_current_anim, "") == target_anim:
-		# Préserve la position de lecture pour une continuité parfaite
-		var pos := _anim_player.current_animation_position
-		_anim_player.play(target_anim)
-		_anim_player.seek(pos, true)
+		_anim_player.play(target_anim, 0.12)
+	elif target_anim == "run":
+		_anim_player.play("run", 0.25, 1.3)
 	else:
-		var speed := 2.5 if target_anim == "run" else 1.0
-		_anim_player.play(target_anim, 0.15, speed)
+		_anim_player.play(target_anim, 0.25)
 
 	_current_anim = target_anim

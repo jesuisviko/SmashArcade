@@ -35,6 +35,8 @@ var facing_direction : float = 1.0   # 1.0 = droite, -1.0 = gauche
 var _model_node      : Node3D = null
 
 var _up_was_pressed  : bool  = false
+var _turn_timer            : float = 0.0   # pivot auto en cours — verrouille la direction
+var _turn_target_direction : float = 0.0   # direction cible du pivot (sign)
 var _air_up_used     : bool  = false   # un seul ATTACK_AIR_UP avant de retoucher le sol
 var _air_down_used   : bool  = false   # un seul ATTACK_AIR_DOWN avant de retoucher le sol
 var _attack_timer    : float = 0.0
@@ -208,6 +210,9 @@ func _tick_timers(delta: float) -> void:
 
 	if _soft_drop_timer > 0.0:
 		_soft_drop_timer -= delta
+
+	if _turn_timer > 0.0:
+		_turn_timer -= delta
 
 	# Délai avant activation de la hitbox
 	if _hit_delay_timer > 0.0:
@@ -542,7 +547,20 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 		_up_was_pressed = input["up"]
 		return
 
-	var dir          := int(input["right"]) - int(input["left"])
+	var raw_dir := int(input["right"]) - int(input["left"])   # input brut : touche tenue ?
+	var dir     := raw_dir
+
+	# Retournement auto : on demande la direction opposée au facing courant.
+	if _turn_timer <= 0.0 and raw_dir != 0 and sign(raw_dir) != sign(facing_direction):
+		_turn_timer            = 0.2
+		_turn_target_direction = float(sign(raw_dir))
+
+	# Pendant le pivot : facing/rotation visent toujours la cible ; le déplacement
+	# horizontal n'a lieu que si la touche est maintenue (sinon décélération sur place).
+	var turning := _turn_timer > 0.0
+	if turning:
+		dir = int(_turn_target_direction)
+
 	var target_speed := float(dir) * char_speed
 	if _knockback_momentum > 0.0:
 		var resistance  : float = clamp(_knockback_momentum / char_speed, 0.5, 8.0)
@@ -552,13 +570,16 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 		_knockback_momentum = lerp(_knockback_momentum, 0.0, decay_rate)
 		if _knockback_momentum < 0.1:
 			_knockback_momentum = 0.0
+	elif turning and raw_dir == 0:
+		# Pivot visuel en cours mais touche relâchée → décélération sur place
+		velocity.x = lerp(velocity.x, 0.0, 0.3)
 	else:
 		var accel := 12.0 if dir != 0 else 20.0
 		var changing_dir := dir != 0 and ((dir > 0 and velocity.x < 0.0) or (dir < 0 and velocity.x > 0.0))
 		velocity.x = lerp(velocity.x, target_speed, accel * (0.8 if changing_dir else 1.0) * delta)
-	if input["right"]:
+	if dir > 0:
 		facing_direction = 1.0
-	elif input["left"]:
+	elif dir < 0:
 		facing_direction = -1.0
 	if _model_node and dir != 0:
 		var target_rot := -PI / 2 if facing_direction == -1.0 else PI / 2
