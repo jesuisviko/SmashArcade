@@ -1,6 +1,15 @@
 extends Node2D
 
-func _process(_delta: float) -> void:
+var _pulse_timer : float = 0.0
+
+func _ready() -> void:
+	$SubtitleLabel.pivot_offset = $SubtitleLabel.size / 2
+
+func _process(delta: float) -> void:
+	_pulse_timer += delta
+	var s : float = 1.0 + sin(_pulse_timer * PI / 2.0) * 0.08
+	$SubtitleLabel.scale = Vector2(s, s)
+
 	if _any_button_just_pressed():
 		get_tree().change_scene_to_file("res://scenes/ui/mode_select.tscn")
 
