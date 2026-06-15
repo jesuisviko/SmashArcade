@@ -416,6 +416,7 @@ func _start_attack(new_state: State) -> void:
 
 
 func _end_attack() -> void:
+	_attack_timer            = 0.0
 	_attack_started_on_floor = false
 	# ATTACK_AIR_UP : libère les cibles jugglées — le dernier hit (apply_hit) les
 	# propulse via la résolution normale du hitstun (_freeze_timer)
@@ -442,6 +443,10 @@ func _end_attack() -> void:
 # ATTACK_AIR_UP — un tick de multi-hit : frappe toutes les cibles présentes dans la
 # hitbox et rafraîchit leur fenêtre de juggle. Appelé par _tick_timers, pas par area_entered.
 func _air_up_multihit() -> void:
+	if _attack_shape.disabled:
+		return
+	if state == State.HITSTUN:
+		return
 	var dmg   : float   = _active_attack_config.get("damage",    attack_light_damage)
 	var kb    : float   = _active_attack_config.get("knockback", attack_light_knockback)
 	var angle : Vector2 = _active_attack_config.get("knockback_angle", Vector2(0.0, 1.0))
@@ -629,6 +634,8 @@ func _set_state(new_state: State) -> void:
 # ─── Hitbox ──────────────────────────────────────────────────────────────────
 
 func _on_attack_hitbox_area_entered(area: Area3D) -> void:
+	if state == State.HITSTUN:
+		return
 	if area.name != "HurtBox":
 		return
 	var target := area.get_parent()
@@ -710,6 +717,26 @@ func flash_hurtbox() -> void:
 
 
 # ─── API publique ────────────────────────────────────────────────────────────
+
+func force_cancel_attack() -> void:
+	_attack_timer        = 0.0
+	_hit_delay_timer     = 0.0
+	_multihit_tick_timer = 0.0
+	_down_attack_phase   = 0
+	_active_attack_config        = {}
+	_attack_shape.disabled       = true
+	_attack_hitbox.monitoring    = false
+	_attack_hitbox.monitorable   = false
+	if debug_mode and _debug_attack_mesh:
+		_debug_attack_mesh.visible = false
+	_is_juggled      = false
+	_juggle_attacker = null
+	# Casse le soft-lock : sortie d'état explicite (un stun éventuel l'écrasera ensuite)
+	if not is_on_floor():
+		_set_state(State.FALL)
+	else:
+		_set_state(State.IDLE)
+
 
 func jump() -> void:
 	if jumps_left <= 0:

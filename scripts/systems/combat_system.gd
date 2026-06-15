@@ -24,43 +24,48 @@ func apply_hit(
 	var attacker_bc := attacker as BaseCharacter
 	var target_bc   := target   as BaseCharacter
 
-	# Parry — réduit les dégâts/knockback ; contre-attaque si attaque cassante
+	# Parry — le défenseur reste en PARRY et encaisse des dégâts/knockback réduits.
+	# L'attaquant est stun si l'attaque est cassante (AIR_DOWN / UP-sol) ou au 2e light parryé.
 	if target_bc != null and target_bc.state == BaseCharacter.State.PARRY:
-		var is_breaking : bool = attacker_bc != null and (
-			attacker_bc.state == BaseCharacter.State.ATTACK_AIR_DOWN or
-			(attacker_bc.state == BaseCharacter.State.ATTACK_UP and attacker_bc._attack_started_on_floor)
+		# Capture l'état d'attaque AVANT le cancel — force_cancel_attack() change l'état
+		var atk_state    : int  = attacker_bc.state if attacker_bc != null else -1
+		var atk_on_floor : bool = attacker_bc != null and attacker_bc._attack_started_on_floor
+		if attacker_bc != null:
+			attacker_bc.force_cancel_attack()
+
+		# Réductions uniformes — toujours appliquées, quel que soit le type d'attaque
+		damage         *= 0.1
+		base_knockback *= 0.05
+		target.damage_percent += damage
+
+		var is_breaking : bool = (
+			atk_state == BaseCharacter.State.ATTACK_AIR_DOWN or
+			(atk_state == BaseCharacter.State.ATTACK_UP and atk_on_floor)
 		)
-		damage *= 0.1
-		if is_breaking:
-			base_knockback *= 0.15
+		var is_light : bool = (
+			atk_state == BaseCharacter.State.ATTACK_LIGHT or
+			atk_state == BaseCharacter.State.ATTACK_AIR_LIGHT
+		)
+
+		if is_breaking and attacker_bc != null:
 			if debug_mode:
 				print("[PARRY COUNTER] %s a counter-parryé ATTACK_AIR_DOWN/UP de %s — attaquant stun 1.5s" % [target.name, attacker.name])
-			if attacker_bc != null:
-				attacker_bc._freeze_timer             = 1.5
-				attacker_bc._pending_knockback        = Vector3.ZERO
-				attacker_bc._hitstun_preserve_velocity = true
-				attacker_bc._set_state(BaseCharacter.State.HITSTUN)
-				attacker_bc._attack_shape.disabled    = true
-				attacker_bc._attack_hitbox.monitoring = false
-				attacker_bc._end_attack()
-			# flow through → defender exits PARRY via enter_hitstun normal
+			attacker_bc._freeze_timer              = 1.5
+			attacker_bc._pending_knockback         = Vector3.ZERO
+			attacker_bc._hitstun_preserve_velocity = true
+			attacker_bc._set_state(BaseCharacter.State.HITSTUN)
+		elif is_light and attacker_bc != null:
+			target_bc._parry_light_hits += 1
+			if debug_mode:
+				print("[PARRY] %s a parryé un light de %s (%d/2) | dmg réduit: %.1f | kb réduit: %.2f" % [target.name, attacker.name, target_bc._parry_light_hits, damage, base_knockback])
+			if target_bc._parry_light_hits >= 2:
+				attacker_bc.enter_hitstun(Vector3.ZERO, 1.5)
+				target_bc._parry_light_hits = 0
 		else:
-			base_knockback *= 0.05
 			if debug_mode:
 				print("[PARRY] %s a parryé un coup de %s | dmg réduit: %.1f | kb réduit: %.2f" % [target.name, attacker.name, damage, base_knockback])
-			if attacker_bc != null and (
-				attacker_bc.state == BaseCharacter.State.ATTACK_LIGHT or
-				attacker_bc.state == BaseCharacter.State.ATTACK_AIR_LIGHT
-			):
-				target_bc._parry_light_hits += 1
-				if target_bc._parry_light_hits >= 2:
-					attacker_bc.enter_hitstun(Vector3.ZERO, 1.5)
-					attacker_bc._attack_shape.disabled    = true
-					attacker_bc._attack_hitbox.monitoring = false
-					attacker_bc._end_attack()
-					target_bc._parry_light_hits = 0
-			target.damage_percent += damage
-			return  # défenseur reste en PARRY — enter_hitstun non appelé
+
+		return  # stoppe le fall-through vers les dégâts normaux
 
 	# 1. Accumulation des dégâts
 	target.damage_percent += damage
