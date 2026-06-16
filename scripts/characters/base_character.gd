@@ -49,6 +49,7 @@ var _respawn_timer         : float = 0.0
 var _blink_timer           : float = 0.0
 var _soft_drop_timer          : float = 0.0
 var _hit_delay_timer          : float = 0.0
+var _slash_arc_timer          : float = -1.0   # < 0 = inactif
 var _down_attack_phase        : int   = 0     # 0=inactif, 1=gel, 2=plongée
 var _down_attack_freeze_timer : float = 0.0
 var _attack_started_on_floor  : bool  = false
@@ -197,6 +198,14 @@ func _physics_process(delta: float) -> void:
 # ─── Timers ──────────────────────────────────────────────────────────────────
 
 func _tick_timers(delta: float) -> void:
+	# Arc visuel — vérifié EN PREMIER pour éviter la race condition avec _attack_timer :
+	# si les deux expirent le même frame, l'arc doit se déclencher avant _end_attack()
+	if _slash_arc_timer >= 0.0:
+		_slash_arc_timer -= delta
+		if _slash_arc_timer <= 0.0:
+			_slash_arc_timer = -1.0
+			_spawn_slash_arc_effect()
+
 	if _attack_timer > 0.0:
 		_attack_timer -= delta
 		if _attack_timer <= 0.0:
@@ -433,6 +442,32 @@ func _start_attack(new_state: State) -> void:
 				mat.albedo_color = Color(1.0, 1.0, 0.0, 0.55)
 			_debug_attack_mesh.visible = true
 
+	if new_state in [State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT, State.ATTACK_STRONG, State.ATTACK_AIR_STRONG]:
+		var hit_delay : float = _active_attack_config.get("hit_delay", 0.0)
+		var extra     : float = 0.0 if new_state in [State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT] else 0.0
+		var arc_delay : float = hit_delay - 0.1 + extra
+		if arc_delay <= 0.0:
+			_spawn_slash_arc_effect()
+		else:
+			_slash_arc_timer = arc_delay
+
+
+func _spawn_slash_arc_effect() -> void:
+	print("[ARC] _spawn_slash_arc_effect — state:", state)
+	if not state in [State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT, State.ATTACK_STRONG, State.ATTACK_AIR_STRONG]:
+		print("[ARC] state guard failed — abort")
+		return
+	var em := get_tree().get_first_node_in_group("effects_manager")
+	if not em:
+		print("[ARC] EffectsManager introuvable — abort")
+		return
+	var is_strong   : bool   = state in [State.ATTACK_STRONG, State.ATTACK_AIR_STRONG]
+	var attack_type : String = "strong" if is_strong else "light"
+	var h_offset  : float  = char_radius * 0.8 if is_strong else char_radius * 0.5
+	var v_offset  : float  = char_height * 0.35 if is_strong else char_height * 0.5
+	var spawn_pos : Vector3 = global_position + Vector3(facing_direction * h_offset, v_offset, 0.0)
+	em.spawn_slash_arc(spawn_pos, facing_direction, attack_type)
+
 
 func _end_attack() -> void:
 	_attack_timer            = 0.0
@@ -452,6 +487,7 @@ func _end_attack() -> void:
 	_attack_hitbox.monitoring = false
 	_attack_shape.disabled    = true
 	_hit_delay_timer          = 0.0
+	_slash_arc_timer          = -1.0
 	_down_attack_phase        = 0
 	if debug_mode and _debug_attack_mesh:
 		_debug_attack_mesh.visible = false
@@ -476,6 +512,9 @@ func _air_up_multihit() -> void:
 		if target == null or target == self or target.is_dead:
 			continue
 		CombatSystem.apply_hit(self, target, dmg, kb, angle)
+		var em := get_tree().get_first_node_in_group("effects_manager")
+		if em:
+			em.spawn_impact(target.global_position + Vector3(0.0, 0.5, 0.0))
 		target._is_juggled      = true
 		target._juggle_attacker = self
 		target._juggle_timer    = 0.35
@@ -735,6 +774,9 @@ func _on_attack_hitbox_area_entered(area: Area3D) -> void:
 
 	var forced_hitstun : float = _active_attack_config.get("forced_hitstun", -1.0)
 	CombatSystem.apply_hit(self, target, damage, base_knockback, knockback_angle, forced_hitstun)
+	var em := get_tree().get_first_node_in_group("effects_manager")
+	if em:
+		em.spawn_impact((_attack_hitbox.global_position + target.global_position) * 0.5)
 
 	# ATTACK_AIR_DOWN — interrompt la plongée sur hit
 	if state == State.ATTACK_AIR_DOWN:
