@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://djk2lakxh6m33"
 path.s3tc="res://.godot/imported/LilGreenTest2_Face CRowd 6.png-8ef5cb6706b7976e0fe4091965f5efcd.s3tc.ctex"
+path.etc2="res://.godot/imported/LilGreenTest2_Face CRowd 6.png-8ef5cb6706b7976e0fe4091965f5efcd.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://blender projects/LilGreenTest2_Face CRowd 6.png"
-dest_files=["res://.godot/imported/LilGreenTest2_Face CRowd 6.png-8ef5cb6706b7976e0fe4091965f5efcd.s3tc.ctex"]
+dest_files=["res://.godot/imported/LilGreenTest2_Face CRowd 6.png-8ef5cb6706b7976e0fe4091965f5efcd.s3tc.ctex", "res://.godot/imported/LilGreenTest2_Face CRowd 6.png-8ef5cb6706b7976e0fe4091965f5efcd.etc2.ctex"]
 
 [params]
 

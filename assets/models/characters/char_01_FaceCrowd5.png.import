@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c50m2mr74l07i"
 path.s3tc="res://.godot/imported/char_01_FaceCrowd5.png-8f3f4d2474598064aa18cd1493b5d136.s3tc.ctex"
+path.etc2="res://.godot/imported/char_01_FaceCrowd5.png-8f3f4d2474598064aa18cd1493b5d136.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/characters/char_01_FaceCrowd5.png"
-dest_files=["res://.godot/imported/char_01_FaceCrowd5.png-8f3f4d2474598064aa18cd1493b5d136.s3tc.ctex"]
+dest_files=["res://.godot/imported/char_01_FaceCrowd5.png-8f3f4d2474598064aa18cd1493b5d136.s3tc.ctex", "res://.godot/imported/char_01_FaceCrowd5.png-8f3f4d2474598064aa18cd1493b5d136.etc2.ctex"]
 
 [params]
 

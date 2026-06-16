@@ -15,8 +15,27 @@ const MIRROR_PAIRS : Dictionary = {
 # Animations qui doivent boucler en LOOP_LINEAR
 const LOOP_LINEAR_ANIMS : Array = ["run", "fall", "fall_mirror"]
 
+# Vitesses de lecture personnalisées (custom_speed, 3e param de play())
+const ANIM_SPEEDS : Dictionary = {
+	"heavy"                  : 1.75,
+	"heavy_mirror"           : 1.75,
+	"attack_up"              : 1.25,
+	"attack_up_mirror"       : 1.25,
+	"run"                    : 2.1,
+	"parry"                  : 1.56,
+	"parry_mirror"           : 1.56,
+	"fall"                   : 1.4,
+	"fall_mirror"            : 1.4,
+	"attack_air_down"        : 2.95,
+	"attack_air_down_mirror" : 2.95,
+	"punch"                  : 2.25,
+	"punch_mirror"           : 2.25,
+	"attack_air_up"          : 2.0,
+	"attack_air_up_mirror"   : 2.0,
+}
+
 # Animations d'attaque/parry — forcées en LOOP_NONE à la première lecture
-const ATTACK_ANIMS : Array = ["punch", "heavy", "attack_up", "attack_air_up", "attack_air_down", "parry", "parry_stun"]
+const ATTACK_ANIMS : Array = ["punch", "heavy", "attack_up", "attack_air_up", "attack_air_up_mirror", "attack_air_down", "parry", "parry_stun"]
 
 var _anim_player          : AnimationPlayer = null
 var _anim_facing          : float           = 1.0   # direction reflétée par l'animation en cours
@@ -164,7 +183,7 @@ func _update_animation(delta: float) -> void:
 		State.ATTACK_UP:
 			target_anim = "attack_up"
 		State.ATTACK_AIR_UP:
-			target_anim = "attack_air_up"
+			target_anim = "attack_air_up" if _anim_facing == 1.0 else "attack_air_up_mirror"
 		State.ATTACK_AIR_DOWN:
 			target_anim = "attack_air_down"
 		State.PARRY:
@@ -189,11 +208,10 @@ func _update_animation(delta: float) -> void:
 		_anim_player.get_animation(target_anim).loop_mode = Animation.LOOP_LINEAR
 
 	# Swap mirror/normal : blend court — un seek() annulerait le crossfade
+	var speed : float = ANIM_SPEEDS.get(target_anim, 1.0)
 	if MIRROR_PAIRS.get(_current_anim, "") == target_anim:
-		_anim_player.play(target_anim, 0.12)
-	elif target_anim == "run":
-		_anim_player.play("run", 0.25, 1.3)
+		_anim_player.play(target_anim, 0.12, speed)
 	else:
-		_anim_player.play(target_anim, 0.25)
+		_anim_player.play(target_anim, 0.25, speed)
 
 	_current_anim = target_anim

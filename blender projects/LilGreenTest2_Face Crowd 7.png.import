@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://d7xygg1itgdo"
 path.s3tc="res://.godot/imported/LilGreenTest2_Face Crowd 7.png-899153671a2b221c176939652a9d2688.s3tc.ctex"
+path.etc2="res://.godot/imported/LilGreenTest2_Face Crowd 7.png-899153671a2b221c176939652a9d2688.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://blender projects/LilGreenTest2_Face Crowd 7.png"
-dest_files=["res://.godot/imported/LilGreenTest2_Face Crowd 7.png-899153671a2b221c176939652a9d2688.s3tc.ctex"]
+dest_files=["res://.godot/imported/LilGreenTest2_Face Crowd 7.png-899153671a2b221c176939652a9d2688.s3tc.ctex", "res://.godot/imported/LilGreenTest2_Face Crowd 7.png-899153671a2b221c176939652a9d2688.etc2.ctex"]
 
 [params]
 

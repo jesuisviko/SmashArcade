@@ -2,21 +2,18 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d4c84msues1ml"
-path.s3tc="res://.godot/imported/char_01_Image.png-8344078aa869504ebf29ab876436e72e.s3tc.ctex"
-path.etc2="res://.godot/imported/char_01_Image.png-8344078aa869504ebf29ab876436e72e.etc2.ctex"
+uid="uid://b174anrpu5qay"
+path.s3tc="res://.godot/imported/texture_concrete_3.jpg-444b312679e204f8b815ba2f6516cafe.s3tc.ctex"
+path.etc2="res://.godot/imported/texture_concrete_3.jpg-444b312679e204f8b815ba2f6516cafe.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
-generator_parameters={
-"md5": "8597d4e7e65352a302b63e07bc01a7da"
-}
 
 [deps]
 
-source_file="res://assets/models/characters/char_01_Image.png"
-dest_files=["res://.godot/imported/char_01_Image.png-8344078aa869504ebf29ab876436e72e.s3tc.ctex", "res://.godot/imported/char_01_Image.png-8344078aa869504ebf29ab876436e72e.etc2.ctex"]
+source_file="res://assets/textures/maps/texture_concrete_3.jpg"
+dest_files=["res://.godot/imported/texture_concrete_3.jpg-444b312679e204f8b815ba2f6516cafe.s3tc.ctex", "res://.godot/imported/texture_concrete_3.jpg-444b312679e204f8b815ba2f6516cafe.etc2.ctex"]
 
 [params]
 

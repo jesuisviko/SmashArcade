@@ -1,9 +1,15 @@
-[gd_scene load_steps=12 format=3 uid="uid://bb3u01h6hy1bi"]
+[gd_scene load_steps=17 format=3 uid="uid://bb3u01h6hy1bi"]
 
 [ext_resource type="Script" uid="uid://bipohffevmrlh" path="res://scripts/map/map_01.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dvfqgxrw2mcba" path="res://assets/textures/maps/texture_concrete.jpg" id="2_1mwur"]
+[ext_resource type="Texture2D" uid="uid://b174anrpu5qay" path="res://assets/textures/maps/texture_concrete_3.jpg" id="2_7kdjr"]
 
 [sub_resource type="BoxMesh" id="Mesh_main"]
 size = Vector3(16, 0.5, 2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_025kq"]
+albedo_texture = ExtResource("2_7kdjr")
+uv1_scale = Vector3(9.8, 2.03, 3.965)
 
 [sub_resource type="BoxShape3D" id="Shape_main"]
 size = Vector3(16, 0.5, 2)
@@ -11,8 +17,16 @@ size = Vector3(16, 0.5, 2)
 [sub_resource type="BoxMesh" id="Mesh_side"]
 size = Vector3(3.22, 0.2, 2)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f7wna"]
+albedo_texture = ExtResource("2_1mwur")
+uv1_scale = Vector3(2.985, 1, 1)
+
 [sub_resource type="BoxShape3D" id="Shape_side"]
 size = Vector3(3.22, 0.2, 2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_leje1"]
+albedo_texture = ExtResource("2_1mwur")
+uv1_scale = Vector3(2.995, 1, 1)
 
 [sub_resource type="BoxShape3D" id="Zone_H"]
 size = Vector3(120, 4, 10)
@@ -42,7 +56,9 @@ collision_layer = 2
 collision_mask = 0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="MainPlatform"]
+gi_lightmap_texel_scale = 0.01
 mesh = SubResource("Mesh_main")
+surface_material_override/0 = SubResource("StandardMaterial3D_025kq")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MainPlatform"]
 shape = SubResource("Shape_main")
@@ -54,6 +70,7 @@ collision_mask = 0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="LeftPlatform"]
 mesh = SubResource("Mesh_side")
+surface_material_override/0 = SubResource("StandardMaterial3D_f7wna")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="LeftPlatform"]
 shape = SubResource("Shape_side")
@@ -65,6 +82,7 @@ collision_mask = 0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="RightPlatform"]
 mesh = SubResource("Mesh_side")
+surface_material_override/0 = SubResource("StandardMaterial3D_leje1")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="RightPlatform"]
 shape = SubResource("Shape_side")
