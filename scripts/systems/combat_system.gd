@@ -74,7 +74,7 @@ func apply_hit(
 
 	# 2. Knockback — croissance exponentielle (pow 1.8) :
 	#    0% → ×1   |   100% → ~×3.5   |   200% → ~×7
-	var damage_factor : float = pow(1.0 + target.damage_percent / 100.0, 1.8)
+	var damage_factor : float = pow(1.0 + target.damage_percent / 100.0, 1.35)
 	var knockback     : float = base_knockback * damage_factor / target.weight_multiplier
 
 	if debug_mode:
@@ -96,6 +96,10 @@ func apply_hit(
 	var hitstun_duration : float
 	if forced_hitstun >= 0.0:
 		hitstun_duration = forced_hitstun
+	elif attacker_bc != null and attacker_bc.state == BaseCharacter.State.ATTACK_LIGHT:
+		hitstun_duration = 0.35 * combo_mult
+	elif attacker_bc != null and attacker_bc.state == BaseCharacter.State.ATTACK_STRONG:
+		hitstun_duration = 0.7 * combo_mult
 	else:
 		var hitstun_frames : int = max(8, int(knockback * 0.4))
 		hitstun_duration = hitstun_frames / TARGET_FPS * combo_mult
@@ -115,3 +119,12 @@ func apply_hit(
 		])
 
 	target.enter_hitstun(knockback_3d, hitstun_duration + (0.1 if is_air_hit else 0.0))
+	# Mini knockback immédiat (phase 1 : 0.15s) — appliqué après enter_hitstun (qui zero la velocity)
+	# Angle Y fortement réduit pour ce mini knockback uniquement
+	# Phase 2 : gel (_mini_knockback_phase expire → velocity = 0) jusqu'à _freeze_timer
+	# Phase 3 : knockback complet (_freeze_timer expire → _pending_knockback appliqué)
+	if target_bc != null:
+		var mini_angle := Vector2(knockback_angle.x, knockback_angle.y * 0.2)
+		var mini_dir   := Vector3(mini_angle.x, mini_angle.y, 0.0).normalized()
+		target.velocity                   = mini_dir * base_knockback * 0.15 / target_bc.weight_multiplier
+		target_bc._mini_knockback_phase   = 0.15

@@ -32,6 +32,7 @@ const ANIM_SPEEDS : Dictionary = {
 	"punch_mirror"           : 2.25,
 	"attack_air_up"          : 2.0,
 	"attack_air_up_mirror"   : 2.0,
+	"parry_stun"             : 2.0,
 }
 
 # Animations d'attaque/parry — forcées en LOOP_NONE à la première lecture
@@ -59,7 +60,7 @@ func _ready() -> void:
 			"position"  : Vector3(0.5, 0.7, 0.0),
 			"size"      : Vector3(0.6, 0.4, 0.3),
 			"damage"    : 4.0,
-			"knockback" : 2.025,  # 1.5 ×1.35
+			"knockback" : 3.544,  # 2.025 ×1.75
 			"duration"  : 0.4,    # hit_delay (0.2) + fenêtre active (0.2)
 			"hit_delay" : 0.2,
 		},
@@ -67,7 +68,7 @@ func _ready() -> void:
 			"position"  : Vector3(0.6, 0.5, 0.0),
 			"size"      : Vector3(0.8, 0.6, 0.3),
 			"damage"    : 9.0,
-			"knockback" : 5.4,    # 4.0 ×1.35
+			"knockback" : 5.468,  # 5.4 ×0.75 ×1.35
 			"duration"  : 0.9,    # hit_delay (0.6) + fenêtre active (0.3)
 			"hit_delay" : 0.6,
 		},

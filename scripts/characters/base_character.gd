@@ -55,8 +55,9 @@ var _attack_started_on_floor  : bool  = false
 
 var combo_count          : int     = 0
 var _combo_window_timer  : float   = 0.0    # 1 s pour compter un coup dans le combo
-var _freeze_timer        : float   = 0.0    # gel du hitstun — knockback appliqué à expiration
-var _pending_knockback   : Vector3 = Vector3.ZERO
+var _freeze_timer         : float   = 0.0    # gel du hitstun — knockback appliqué à expiration
+var _mini_knockback_phase : float   = 0.0    # phase 1 (0.15s) : mini knockback actif avant le gel
+var _pending_knockback    : Vector3 = Vector3.ZERO
 var _knockback_gravity_timer : float = 0.0   # >0 = gravité réduite (Phase 1, 2 s après un knockback)
 var _post_knockback_landing  : bool  = true  # false du lancement du knockback jusqu'à l'atterrissage
 var _knockback_momentum           : float = 0.0   # magnitude horizontale stockée au lancement
@@ -240,7 +241,13 @@ func _tick_timers(delta: float) -> void:
 	if _combo_window_timer > 0.0:
 		_combo_window_timer = max(0.0, _combo_window_timer - delta)
 
-	# Gel du hitstun — à expiration : lance le personnage avec le knockback stocké
+	# Phase 1 — mini knockback actif (0.15s) : velocity non touchée → transition gel à expiration
+	if _mini_knockback_phase > 0.0:
+		_mini_knockback_phase -= delta
+		if _mini_knockback_phase <= 0.0 and state == State.HITSTUN:
+			velocity = Vector3.ZERO   # gel complet jusqu'à l'expiration de _freeze_timer
+
+	# Gel du hitstun — à expiration : applique le knockback complet et termine le hitstun
 	if _freeze_timer > 0.0:
 		_freeze_timer -= delta
 		if _freeze_timer <= 0.0 and state == State.HITSTUN:
@@ -508,9 +515,9 @@ func _apply_gravity(delta: float) -> void:
 	# Gravité réduite après un knockback (timer armé dans _tick_timers)
 	if not is_on_floor():
 		if _knockback_gravity_timer > 0.0:
-			# Phase 1 : 2 s après le knockback → gravité / 2
+			# Phase 1 : 2 s après le knockback → gravité × 0.8
 			_knockback_gravity_timer -= delta
-			velocity.y -= (GRAVITY / 2.0) * delta
+			velocity.y -= (GRAVITY * 0.8) * delta
 			return
 		elif not _post_knockback_landing and state == State.FALL:
 			# Phase 2 : timer écoulé, descente jusqu'au sol → gravité / 1.5
@@ -580,7 +587,7 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 	var target_speed := float(dir) * char_speed
 	if _knockback_momentum > 0.0:
 		var resistance  : float = clamp(_knockback_momentum / char_speed, 0.5, 8.0)
-		var lerp_factor : float = 0.015 / resistance
+		var lerp_factor : float = 0.036 / resistance
 		velocity.x          = lerp(velocity.x, target_speed, lerp_factor)
 		var decay_rate  : float = max(0.005, 0.03 - damage_percent * 0.0001)
 		_knockback_momentum = lerp(_knockback_momentum, 0.0, decay_rate)
@@ -697,13 +704,14 @@ func _on_attack_hitbox_area_entered(area: Area3D) -> void:
 		if _active_attack_config.has("knockback_angle"):
 			knockback_angle = _active_attack_config["knockback_angle"]
 		else:
-			knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.5).normalized()
+			var y_comp := 0.75 if state in [State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT] else 0.5
+			knockback_angle = Vector2(sign(target.global_position.x - global_position.x), y_comp).normalized()
 	else:
 		match state:
 			State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT:
 				damage          = attack_light_damage
 				base_knockback  = attack_light_knockback
-				knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.5).normalized()
+				knockback_angle = Vector2(sign(target.global_position.x - global_position.x), 0.75).normalized()
 			State.ATTACK_STRONG, State.ATTACK_AIR_STRONG:
 				damage          = attack_strong_damage
 				base_knockback  = attack_strong_knockback
