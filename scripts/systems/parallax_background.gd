@@ -14,7 +14,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if not _camera:
 		return
-	var parallax_strength := 0.425
+	var parallax_strength := 0.65
 	position.x = base_position.x + _camera.position.x * parallax_strength
 	position.y = base_position.y + (_camera.position.y - 2.25) * parallax_strength * 0.5
 

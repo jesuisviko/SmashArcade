@@ -13,6 +13,7 @@ config_version=5
 config/name="SmashArcade"
 run/main_scene="uid://vthno6q3n8f3"
 config/features=PackedStringArray("4.5", "GL Compatibility")
+run/max_fps=600
 config/icon="res://icon.svg"
 config/run/main_scene="res://scenes/ui/title_screen.tscn"
 

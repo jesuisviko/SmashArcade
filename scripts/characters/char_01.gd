@@ -1,6 +1,7 @@
 extends BaseCharacter
 
-const AIR_ANIM_DELAY := 0.8
+const AIR_ANIM_DELAY      := 0.8
+const HIT_FLASH_INTERVAL  := 0.08
 
 # Paires mirror : clé = animation courante, valeur = sa variante miroir
 const MIRROR_PAIRS : Dictionary = {
@@ -32,17 +33,20 @@ const ANIM_SPEEDS : Dictionary = {
 	"punch_mirror"           : 2.25,
 	"attack_air_up"          : 2.0,
 	"attack_air_up_mirror"   : 2.0,
-	"parry_stun"             : 2.0,
+	"stun_001"             : 2.0,
 }
 
 # Animations d'attaque/parry — forcées en LOOP_NONE à la première lecture
-const ATTACK_ANIMS : Array = ["punch", "heavy", "attack_up", "attack_air_up", "attack_air_up_mirror", "attack_air_down", "parry", "parry_stun"]
+const ATTACK_ANIMS : Array = ["punch", "heavy", "attack_up", "attack_air_up", "attack_air_up_mirror", "attack_air_down", "parry", "stun_001"]
 
-var _anim_player          : AnimationPlayer = null
-var _anim_facing          : float           = 1.0   # direction reflétée par l'animation en cours
-var _current_anim         : String          = ""
-var _air_anim_timer       : float           = 0.0
-var _direction_hold_timer : float           = 0.0
+var _anim_player          : AnimationPlayer          = null
+var _anim_facing          : float                    = 1.0
+var _current_anim         : String                   = ""
+var _air_anim_timer       : float                    = 0.0
+var _direction_hold_timer : float                    = 0.0
+var _hit_flash_timer      : float                    = 0.0
+var _flash_materials      : Array[StandardMaterial3D] = []
+var _flash_base_colors    : Array[Color]              = []
 
 
 func _ready() -> void:
@@ -53,6 +57,7 @@ func _ready() -> void:
 	player_id         = 1
 	super._ready()
 	_anim_player = $Model/char_01_final/AnimationPlayer
+	_collect_flash_materials($Model/char_01_final)
 	# Knockbacks : buff global ×1.35 (ATTACK_AIR_UP ×2 au préalable). La croissance
 	# avec le % est gérée par CombatSystem (formule exponentielle pow 1.8).
 	_attack_configs = {
@@ -125,6 +130,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)
 	_update_animation(delta)
+	_process_hit_flash(delta)
 
 
 func set_initial_facing(direction: float) -> void:
@@ -190,10 +196,7 @@ func _update_animation(delta: float) -> void:
 		State.PARRY:
 			target_anim = "parry"
 		State.HITSTUN:
-			if _parry_stunned:
-				target_anim = "parry_stun"
-			else:
-				return
+			target_anim = "stun_001"
 		_:
 			return   # ATTACK_DOWN, RESPAWNING — garde la dernière animation
 
@@ -216,3 +219,33 @@ func _update_animation(delta: float) -> void:
 		_anim_player.play(target_anim, 0.25, speed)
 
 	_current_anim = target_anim
+
+
+# Collecte et pré-duplique tous les matériaux StandardMaterial3D du modèle (appelé une fois dans _ready).
+# La duplication évite de modifier le matériau partagé du mesh ; on garde les références pour le flash.
+func _collect_flash_materials(node: Node) -> void:
+	if node is MeshInstance3D:
+		var mi := node as MeshInstance3D
+		if mi.mesh:
+			for s in mi.mesh.get_surface_count():
+				var mat := mi.mesh.surface_get_material(s)
+				if mat is StandardMaterial3D:
+					var dup := (mat as StandardMaterial3D).duplicate() as StandardMaterial3D
+					mi.set_surface_override_material(s, dup)
+					_flash_materials.append(dup)
+					_flash_base_colors.append(dup.albedo_color)
+	for child in node.get_children():
+		_collect_flash_materials(child)
+
+
+func _process_hit_flash(delta: float) -> void:
+	if state == State.HITSTUN:
+		_hit_flash_timer += delta
+		var flash_on := int(_hit_flash_timer / HIT_FLASH_INTERVAL) % 2 == 0
+		for i in range(_flash_materials.size()):
+			var base := _flash_base_colors[i]
+			_flash_materials[i].albedo_color = base * 1.8 if flash_on else base
+	elif _hit_flash_timer > 0.0:
+		_hit_flash_timer = 0.0
+		for i in range(_flash_materials.size()):
+			_flash_materials[i].albedo_color = _flash_base_colors[i]
