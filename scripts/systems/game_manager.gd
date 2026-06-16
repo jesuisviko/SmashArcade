@@ -33,6 +33,9 @@ func player_died(player_id: int) -> void:
 	if game_state != "fighting":
 		return
 	stocks[player_id] -= 1
+	var hud = get_tree().get_first_node_in_group("hud")
+	if hud:
+		hud.show_kill_feed(player_id, stocks[player_id])
 	if stocks[player_id] > 0:
 		respawn(player_id)
 	else:

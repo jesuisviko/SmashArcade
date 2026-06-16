@@ -1,14 +1,30 @@
 extends CanvasLayer
 
-@onready var _p1_damage : Label         = $P1Panel/DamageLabel
-@onready var _p2_damage : Label         = $P2Panel/DamageLabel
-@onready var _p1_stocks : HBoxContainer = $P1Panel/StockIcons
-@onready var _p2_stocks : HBoxContainer = $P2Panel/StockIcons
+@onready var _p1_damage      : Label         = $P1Panel/DamageLabel
+@onready var _p2_damage      : Label         = $P2Panel/DamageLabel
+@onready var _p1_stocks      : HBoxContainer = $P1Panel/StockIcons
+@onready var _p2_stocks      : HBoxContainer = $P2Panel/StockIcons
+@onready var _kill_feed      : Label         = $KillFeedLabel
+
+var _kill_feed_timer : float = 0.0
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_refresh(1, _p1_damage, _p1_stocks)
 	_refresh(2, _p2_damage, _p2_stocks)
+	if _kill_feed_timer > 0.0:
+		_kill_feed_timer -= delta
+		if _kill_feed_timer <= 0.0:
+			_kill_feed.visible = false
+
+
+func show_kill_feed(player_id: int, remaining_stocks: int) -> void:
+	if remaining_stocks > 0:
+		_kill_feed.text = "Joueur %d OUT ! Vies restantes : %d" % [player_id, remaining_stocks]
+	else:
+		_kill_feed.text = "Joueur %d ELIMINÉ !" % player_id
+	_kill_feed.visible  = true
+	_kill_feed_timer    = 2.0
 
 
 func _refresh(id: int, dmg_label: Label, stocks_box: HBoxContainer) -> void:
