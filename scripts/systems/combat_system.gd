@@ -129,3 +129,11 @@ func apply_hit(
 		var mini_dir   := Vector3(mini_angle.x, mini_angle.y, 0.0).normalized()
 		target.velocity                   = mini_dir * base_knockback * 0.15 / target_bc.weight_multiplier
 		target_bc._mini_knockback_phase   = 0.15
+
+	# Retournement forcé si attaque dans le dos
+	if target_bc != null and attacker_bc != null:
+		var dx         : float = attacker.global_position.x - target.global_position.x
+		var dir_to_atk : float = 1.0 if dx > 0.0 else -1.0
+		if dx != 0.0 and dir_to_atk != target_bc.facing_direction:
+			target_bc.facing_direction  = dir_to_atk
+			target_bc._force_quick_turn = 0.1

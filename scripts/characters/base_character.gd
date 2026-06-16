@@ -55,6 +55,7 @@ var _slash_arc_timer          : float = -1.0   # < 0 = inactif
 var _parry_dash_used          : bool  = false
 var _parry_dash_timer         : float = 0.0
 var _parry_dash_dir           : float = 0.0
+var _force_quick_turn         : float = 0.0
 const PARRY_DASH_DURATION                     := 0.16
 const PARRY_DASH_SPEED                        := 7.0
 var _down_attack_phase        : int   = 0     # 0=inactif, 1=gel, 2=plongée
@@ -232,6 +233,12 @@ func _tick_timers(delta: float) -> void:
 
 	if _turn_timer > 0.0:
 		_turn_timer -= delta
+
+	if _force_quick_turn > 0.0:
+		_force_quick_turn -= delta
+		if _model_node:
+			var target_rot := -PI / 2.0 if facing_direction == -1.0 else PI / 2.0
+			_model_node.rotation.y = lerp_angle(_model_node.rotation.y, target_rot, 0.9)
 
 	# Délai avant activation de la hitbox
 	if _hit_delay_timer > 0.0:
