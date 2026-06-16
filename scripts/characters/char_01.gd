@@ -70,12 +70,13 @@ func _ready() -> void:
 			"hit_delay" : 0.2,
 		},
 		"ATTACK_STRONG": {
-			"position"  : Vector3(0.6, 0.5, 0.0),
-			"size"      : Vector3(0.8, 0.6, 0.3),
-			"damage"    : 9.0,
-			"knockback" : 6.562,  # 5.4 ×0.75 ×1.35 ×1.2
-			"duration"  : 1.3,    # hit_delay (0.6) + fenêtre active (0.3) + 0.4
-			"hit_delay" : 0.6,
+			"position"              : Vector3(0.6, 0.5, 0.0),
+			"size"                  : Vector3(0.8, 0.6, 0.3),
+			"damage"                : 9.0,
+			"knockback"             : 6.562,  # 5.4 ×0.75 ×1.35 ×1.2
+			"duration"              : 0.95,   # hit_delay (0.6) + fenêtre active (0.3) + cooldown (0.05)
+			"hit_delay"             : 0.6,
+			"hitbox_active_duration": 0.3,
 		},
 		"ATTACK_UP": {
 			# Attaque montante au sol — bouton dédié (p*_attack_up)

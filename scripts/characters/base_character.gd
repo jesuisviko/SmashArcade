@@ -49,6 +49,8 @@ var _respawn_timer         : float = 0.0
 var _blink_timer           : float = 0.0
 var _soft_drop_timer          : float = 0.0
 var _hit_delay_timer          : float = 0.0
+var _hitbox_active_timer      : float = -1.0   # < 0 = inactif
+var _strong_extra_cooldown    : float = 0.0
 var _slash_arc_timer          : float = -1.0   # < 0 = inactif
 var _down_attack_phase        : int   = 0     # 0=inactif, 1=gel, 2=plongée
 var _down_attack_freeze_timer : float = 0.0
@@ -234,6 +236,21 @@ func _tick_timers(delta: float) -> void:
 			_attack_hitbox.monitoring = true
 			if debug_mode and _debug_attack_mesh:
 				_debug_attack_mesh.visible = true
+			var had : float = _active_attack_config.get("hitbox_active_duration", -1.0)
+			if had > 0.0:
+				_hitbox_active_timer = had
+
+	if _hitbox_active_timer > 0.0:
+		_hitbox_active_timer -= delta
+		if _hitbox_active_timer <= 0.0:
+			_hitbox_active_timer      = -1.0
+			_attack_shape.disabled    = true
+			_attack_hitbox.monitoring = false
+			if debug_mode and _debug_attack_mesh:
+				_debug_attack_mesh.visible = false
+
+	if _strong_extra_cooldown > 0.0:
+		_strong_extra_cooldown -= delta
 
 	# ATTACK_AIR_DOWN phase 1 → phase 2 (gel → plongée)
 	if _down_attack_phase == 1:
@@ -345,6 +362,8 @@ func _handle_attack_input(input: Dictionary) -> void:
 			elif s == State.ATTACK_AIR_DOWN: _air_down_used = true
 
 	elif input["attack_strong"]:
+		if _strong_extra_cooldown > 0.0:
+			return
 		var s: State = State.ATTACK_STRONG
 		if is_on_floor():
 			if input["down"]: s = State.ATTACK_DOWN
@@ -487,8 +506,11 @@ func _end_attack() -> void:
 	_attack_hitbox.monitoring = false
 	_attack_shape.disabled    = true
 	_hit_delay_timer          = 0.0
+	_hitbox_active_timer      = -1.0
 	_slash_arc_timer          = -1.0
 	_down_attack_phase        = 0
+	if state in [State.ATTACK_STRONG, State.ATTACK_AIR_STRONG]:
+		_strong_extra_cooldown = 0.8
 	if debug_mode and _debug_attack_mesh:
 		_debug_attack_mesh.visible = false
 	if not (state == State.HITSTUN or state == State.PARRY):
