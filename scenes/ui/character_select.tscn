@@ -40,10 +40,10 @@ expand_mode = 3
 stretch_mode = 5
 
 [node name="P2SplashFrame" type="TextureRect" parent="."]
-offset_left = 775.0
-offset_top = 143.0
-offset_right = 1225.0
-offset_bottom = 599.0
+offset_left = 776.0
+offset_top = 158.0
+offset_right = 1226.0
+offset_bottom = 614.0
 texture = ExtResource("3_splashcadre")
 expand_mode = 3
 stretch_mode = 5

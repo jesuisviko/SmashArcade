@@ -39,6 +39,7 @@ var _turn_timer            : float = 0.0   # pivot auto en cours — verrouille 
 var _turn_target_direction : float = 0.0   # direction cible du pivot (sign)
 var _air_up_used     : bool  = false   # un seul ATTACK_AIR_UP avant de retoucher le sol
 var _air_down_used   : bool  = false   # un seul ATTACK_AIR_DOWN avant de retoucher le sol
+var _attack_up_count : int   = 0       # max 2 ATTACK_UP en l'air avant de retoucher le sol
 var _attack_timer    : float = 0.0
 var _parry_timer          : float = 0.0
 var _parry_cooldown_timer : float = 0.0
@@ -61,6 +62,7 @@ var _post_knockback_landing  : bool  = true  # false du lancement du knockback j
 var _knockback_momentum           : float = 0.0   # magnitude horizontale stockée au lancement
 var _was_on_floor                 : bool  = false # front montant d'atterrissage
 var _hitstun_preserve_velocity    : bool  = false # true = gravité active + velocity conservée pendant HITSTUN
+var _parry_stunned                : bool  = false # true = HITSTUN déclenché par un parry counter
 
 var _multihit_tick_timer      : float           = 0.0
 var _is_juggled               : bool            = false
@@ -281,6 +283,7 @@ func _tick_timers(delta: float) -> void:
 
 
 func _end_hitstun() -> void:
+	_parry_stunned      = false
 	_post_hitstun_grace = 0.3
 	if debug_mode and _debug_hurt_mesh:
 		var mat := _debug_hurt_mesh.material_override as StandardMaterial3D
@@ -301,8 +304,12 @@ func _handle_attack_input(input: Dictionary) -> void:
 	if state == State.HITSTUN or _is_attacking() or state == State.PARRY or state == State.RESPAWNING:
 		return
 
-	if input["attack_up"] and is_on_floor():
-		if not _air_up_used:
+	if input["attack_up"]:
+		if not is_on_floor() and _attack_up_count >= 2:
+			pass
+		else:
+			if not is_on_floor():
+				_attack_up_count += 1
 			_start_attack(State.ATTACK_UP)
 	elif input["attack_light"]:
 		var s: State = State.ATTACK_LIGHT
@@ -542,8 +549,17 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 	if _is_juggled or state == State.HITSTUN or state == State.RESPAWNING or state == State.CROUCH:
 		_up_was_pressed = input["up"]
 		return
-	# ATTACK_AIR_UP : mouvement horizontal libre, saut bloqué — tous les autres états attaquants bloqués
-	if _is_attacking() and state != State.ATTACK_AIR_UP:
+	# Attaques aériennes : mouvement latéral réduit à 35% sauf ATTACK_AIR_DOWN (figé)
+	if _is_attacking() and not is_on_floor():
+		if state == State.ATTACK_AIR_DOWN:
+			_up_was_pressed = input["up"]
+			return
+		var air_dir    := int(input["right"]) - int(input["left"])
+		var air_target := float(air_dir) * char_speed * 0.35
+		velocity.x      = lerp(velocity.x, air_target, 0.08)
+		_up_was_pressed = input["up"]
+		return
+	if _is_attacking():
 		_up_was_pressed = input["up"]
 		return
 
@@ -624,8 +640,9 @@ func _update_state(input: Dictionary) -> void:
 		new_state = State.JUMP if velocity.y > 0.0 else State.FALL
 	# Retour au sol : réarme les attaques aériennes pour le prochain saut
 	if is_on_floor() and (new_state == State.IDLE or new_state == State.RUN):
-		_air_up_used   = false
-		_air_down_used = false
+		_air_up_used    = false
+		_air_down_used  = false
+		_attack_up_count = 0
 	_set_state(new_state)
 
 

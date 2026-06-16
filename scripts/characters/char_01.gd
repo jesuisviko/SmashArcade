@@ -15,6 +15,9 @@ const MIRROR_PAIRS : Dictionary = {
 # Animations qui doivent boucler en LOOP_LINEAR
 const LOOP_LINEAR_ANIMS : Array = ["run", "fall", "fall_mirror"]
 
+# Animations d'attaque/parry — forcées en LOOP_NONE à la première lecture
+const ATTACK_ANIMS : Array = ["punch", "heavy", "attack_up", "attack_air_up", "attack_air_down", "parry", "parry_stun"]
+
 var _anim_player          : AnimationPlayer = null
 var _anim_facing          : float           = 1.0   # direction reflétée par l'animation en cours
 var _current_anim         : String          = ""
@@ -29,7 +32,7 @@ func _ready() -> void:
 	char_speed        = 4.68
 	player_id         = 1
 	super._ready()
-	_anim_player = $Model/char_01_MOUVEMENTS/AnimationPlayer
+	_anim_player = $Model/char_01_final/AnimationPlayer
 	# Knockbacks : buff global ×1.35 (ATTACK_AIR_UP ×2 au préalable). La croissance
 	# avec le % est gérée par CombatSystem (formule exponentielle pow 1.8).
 	_attack_configs = {
@@ -154,17 +157,32 @@ func _update_animation(delta: float) -> void:
 				target_anim = "jump" if _anim_facing == 1.0 else "jump_mirror"
 			else:
 				target_anim = "fall" if _anim_facing == 1.0 else "fall_mirror"
+		State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT:
+			target_anim = "punch"
+		State.ATTACK_STRONG, State.ATTACK_AIR_STRONG:
+			target_anim = "heavy"
+		State.ATTACK_UP:
+			target_anim = "attack_up"
 		State.ATTACK_AIR_UP:
-			target_anim = "jump" if _anim_facing == 1.0 else "jump_mirror"
+			target_anim = "attack_air_up"
+		State.ATTACK_AIR_DOWN:
+			target_anim = "attack_air_down"
+		State.PARRY:
+			target_anim = "parry"
+		State.HITSTUN:
+			if _parry_stunned:
+				target_anim = "parry_stun"
+			else:
+				return
 		_:
-			return   # ATTACK_*, HITSTUN, PARRY, RESPAWNING — garde la dernière animation
+			return   # ATTACK_DOWN, RESPAWNING — garde la dernière animation
 
 	if target_anim == _current_anim:
 		return
 
-	# Crouch sans boucle
-	if target_anim == "crouch" and _anim_player.has_animation("crouch"):
-		_anim_player.get_animation("crouch").loop_mode = Animation.LOOP_NONE
+	# Crouch et attaques : pas de boucle
+	if (target_anim == "crouch" or target_anim in ATTACK_ANIMS) and _anim_player.has_animation(target_anim):
+		_anim_player.get_animation(target_anim).loop_mode = Animation.LOOP_NONE
 
 	# run / fall doivent boucler
 	if target_anim in LOOP_LINEAR_ANIMS and _anim_player.has_animation(target_anim):

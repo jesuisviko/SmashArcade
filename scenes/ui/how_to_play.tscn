@@ -28,6 +28,7 @@ offset_left = 40.0
 offset_top = 35.0
 offset_right = 650.0
 offset_bottom = 563.0
+rotation = -0.0014002753
 texture = ExtResource("3_image")
 expand_mode = 1
 stretch_mode = 5

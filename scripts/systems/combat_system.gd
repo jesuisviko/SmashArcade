@@ -53,12 +53,14 @@ func apply_hit(
 			attacker_bc._freeze_timer              = 1.5
 			attacker_bc._pending_knockback         = Vector3.ZERO
 			attacker_bc._hitstun_preserve_velocity = true
+			attacker_bc._parry_stunned             = true
 			attacker_bc._set_state(BaseCharacter.State.HITSTUN)
 		elif is_light and attacker_bc != null:
 			target_bc._parry_light_hits += 1
 			if debug_mode:
 				print("[PARRY] %s a parryé un light de %s (%d/2) | dmg réduit: %.1f | kb réduit: %.2f" % [target.name, attacker.name, target_bc._parry_light_hits, damage, base_knockback])
 			if target_bc._parry_light_hits >= 2:
+				attacker_bc._parry_stunned = true
 				attacker_bc.enter_hitstun(Vector3.ZERO, 1.5)
 				target_bc._parry_light_hits = 0
 		else:
