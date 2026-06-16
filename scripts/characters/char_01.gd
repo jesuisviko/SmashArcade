@@ -68,8 +68,8 @@ func _ready() -> void:
 			"position"  : Vector3(0.6, 0.5, 0.0),
 			"size"      : Vector3(0.8, 0.6, 0.3),
 			"damage"    : 9.0,
-			"knockback" : 5.468,  # 5.4 ×0.75 ×1.35
-			"duration"  : 0.9,    # hit_delay (0.6) + fenêtre active (0.3)
+			"knockback" : 6.562,  # 5.4 ×0.75 ×1.35 ×1.2
+			"duration"  : 1.3,    # hit_delay (0.6) + fenêtre active (0.3) + 0.4
 			"hit_delay" : 0.6,
 		},
 		"ATTACK_UP": {
@@ -95,7 +95,7 @@ func _ready() -> void:
 			# Tourbillon vers le haut — hitbox large + impulsion verticale
 			"position"        : Vector3(0.0, 0.7, 0.0),
 			"size"            : Vector3(1.2, 1.2, 0.3),
-			"damage"          : 4.0,
+			"damage"          : 3.6,    # 4.0 ×0.9
 			"knockback"       : 4.05,   # 1.5 ×2 (air_up) ×1.35
 			"duration"        : 0.5,
 			"velocity_y"      : JUMP_SPEED * 1.6,

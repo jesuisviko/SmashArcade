@@ -5,12 +5,12 @@ const FOV_MAX         := 72.0
 const DIST_ZOOM_START := 5.0    # distance minimale avant que le FOV commence à augmenter
 const DIST_MAX        := 10.0   # distance de référence pour le zoom max
 const X_CLAMP         := 8.0    # limite absolue du déplacement horizontal de la caméra
-const LERP_SPEED      := 0.08
-const FOV_LERP_SPEED  := 0.01    # 0.008 ×1.25 — atteint la cible FOV plus vite
+const LERP_SPEED      := 0.068
+const FOV_LERP_SPEED  := 0.0085  # 0.008 ×1.25 ×0.85 — atteint la cible FOV plus vite
 const FIXED_Y         := 2.0    # position Y de repos (snap game_over) et minimum de suivi
-const Y_MAX           := 5.0    # Y maximum du suivi vertical
+const Y_MAX           := 5.25   # Y maximum du suivi vertical
 const Y_OFFSET        := 2.65   # décalage au-dessus du point médian Y des joueurs
-const Y_LERP          := 0.0025 # vitesse de suivi vertical (lent et doux)
+const Y_LERP          := 0.002763 # vitesse de suivi vertical (lent et doux)
 const FIXED_Z         := 8.0
 
 const RESET_TARGET_Y   := 2.25  # cible Y en état RESETTING (= Y_OFFSET)
@@ -53,24 +53,37 @@ func _process_normal() -> void:
 	var overflow  : float = abs(target_x) - X_CLAMP
 
 	# Cible Y : suit la moyenne des positions Y + offset, clampée
+	# Min élargi de 1.5 unité vers le bas pour permettre un léger dézoom descendant
 	var mid_y    := (p1y + p2y) * 0.5
-	var target_y := clampf(mid_y + Y_OFFSET, FIXED_Y, Y_MAX)
+	var target_y := clampf(mid_y + Y_OFFSET, FIXED_Y - 1.5, Y_MAX)
 
 	# FOV dynamique : spread horizontal et vertical indépendants
 	var horizontal_spread   : float = abs(p1x - p2x)
 	var vertical_spread     : float = max(0.0, (position.y - Y_OFFSET) * 2.0)
 	var fov_from_horizontal : float = (horizontal_spread - 5.0) / 5.0
-	var fov_from_vertical   : float = (vertical_spread   - 1.0) / 2.4   # 3.0 /1.25 — FOV verticale plus réactive
-	var fov_factor          : float = clamp(max(fov_from_horizontal, fov_from_vertical), 0.0, 1.0)
+	var fov_normalized      : float = clamp((vertical_spread - 1.0) / 4.0, 0.0, 1.0)
+	var fov_from_vertical   : float = pow(fov_normalized, 1.6) * 1.4
+	# Dézoom vers le bas — caméra sous FIXED_Y, amplitude ~3× moindre qu'en haut
+	var vertical_spread_down   : float = max(0.0, FIXED_Y - position.y)
+	var fov_norm_down          : float = clamp(vertical_spread_down / 4.0, 0.0, 1.0)
+	var fov_from_vertical_down : float = pow(fov_norm_down, 1.6) * (1.4 / 3.0)
+	var fov_factor             : float = clamp(max(fov_from_horizontal, max(fov_from_vertical, fov_from_vertical_down)), 0.0, 1.0)
 	var target_fov          : float = lerp(FOV_MIN, 72.0, fov_factor)
 	# FOV compensatoire quand le point médian dépasse le clamp latéral
 	var overflow_fov        : float = clamp(overflow * 8.0, 0.0, 20.0)
 	target_fov = min(target_fov + overflow_fov, 67.0)
 
 	position.x = lerp(position.x, clamped_x, LERP_SPEED)
-	position.y = lerp(position.y, target_y, Y_LERP)
+
+	var y_diff         : float = abs(target_y - position.y)
+	var dynamic_lerp_y : float = clamp(y_diff * 0.08, Y_LERP, Y_LERP * 2.5)
+	position.y = lerp(position.y, target_y, dynamic_lerp_y)
+
+	var fov_diff         : float = abs(target_fov - fov)
+	var dynamic_lerp_fov : float = clamp(fov_diff * 0.2, FOV_LERP_SPEED, FOV_LERP_SPEED * 1.4)
+	fov = lerp(fov, target_fov, dynamic_lerp_fov)
+
 	position.z = FIXED_Z
-	fov        = lerp(fov, target_fov, FOV_LERP_SPEED)
 
 
 # Lerp progressif vers la position centrale — actif de la mort jusqu'au respawn

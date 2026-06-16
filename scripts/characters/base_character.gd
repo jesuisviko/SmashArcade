@@ -587,7 +587,7 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 	var target_speed := float(dir) * char_speed
 	if _knockback_momentum > 0.0:
 		var resistance  : float = clamp(_knockback_momentum / char_speed, 0.5, 8.0)
-		var lerp_factor : float = 0.036 / resistance
+		var lerp_factor : float = 0.0378 / resistance
 		velocity.x          = lerp(velocity.x, target_speed, lerp_factor)
 		var decay_rate  : float = max(0.005, 0.03 - damage_percent * 0.0001)
 		_knockback_momentum = lerp(_knockback_momentum, 0.0, decay_rate)

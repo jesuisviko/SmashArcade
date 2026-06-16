@@ -40,7 +40,8 @@ func apply_hit(
 
 		var is_breaking : bool = (
 			atk_state == BaseCharacter.State.ATTACK_AIR_DOWN or
-			(atk_state == BaseCharacter.State.ATTACK_UP and atk_on_floor)
+			(atk_state == BaseCharacter.State.ATTACK_UP and atk_on_floor) or
+			atk_state == BaseCharacter.State.ATTACK_STRONG
 		)
 		var is_light : bool = (
 			atk_state == BaseCharacter.State.ATTACK_LIGHT or
@@ -74,7 +75,7 @@ func apply_hit(
 
 	# 2. Knockback — croissance exponentielle (pow 1.8) :
 	#    0% → ×1   |   100% → ~×3.5   |   200% → ~×7
-	var damage_factor : float = pow(1.0 + target.damage_percent / 100.0, 1.35)
+	var damage_factor : float = pow(1.0 + target.damage_percent / 100.0, 1.6)
 	var knockback     : float = base_knockback * damage_factor / target.weight_multiplier
 
 	if debug_mode:
