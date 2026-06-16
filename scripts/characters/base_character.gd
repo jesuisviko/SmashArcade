@@ -52,6 +52,11 @@ var _hit_delay_timer          : float = 0.0
 var _hitbox_active_timer      : float = -1.0   # < 0 = inactif
 var _strong_extra_cooldown    : float = 0.0
 var _slash_arc_timer          : float = -1.0   # < 0 = inactif
+var _parry_dash_used          : bool  = false
+var _parry_dash_timer         : float = 0.0
+var _parry_dash_dir           : float = 0.0
+const PARRY_DASH_DURATION                     := 0.16
+const PARRY_DASH_SPEED                        := 7.0
 var _down_attack_phase        : int   = 0     # 0=inactif, 1=gel, 2=plongée
 var _down_attack_freeze_timer : float = 0.0
 var _attack_started_on_floor  : bool  = false
@@ -252,6 +257,9 @@ func _tick_timers(delta: float) -> void:
 	if _strong_extra_cooldown > 0.0:
 		_strong_extra_cooldown -= delta
 
+	if _parry_dash_timer > 0.0:
+		_parry_dash_timer -= delta
+
 	# ATTACK_AIR_DOWN phase 1 → phase 2 (gel → plongée)
 	if _down_attack_phase == 1:
 		_down_attack_freeze_timer -= delta
@@ -380,6 +388,7 @@ func _handle_attack_input(input: Dictionary) -> void:
 		_set_state(State.PARRY)
 		_parry_timer      = parry_duration
 		_parry_light_hits = 0
+		_parry_dash_used  = false
 
 
 func _start_attack(new_state: State) -> void:
@@ -611,7 +620,15 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 		_up_was_pressed = input["up"]
 		return
 	if state == State.PARRY:
-		velocity.x      = lerp(velocity.x, 0.0, 0.3)
+		if _parry_dash_timer > 0.0:
+			velocity.x = _parry_dash_dir * PARRY_DASH_SPEED
+		elif not _parry_dash_used and (input["left"] or input["right"]):
+			_parry_dash_used  = true
+			_parry_dash_dir   = 1.0 if input["right"] else -1.0
+			_parry_dash_timer = PARRY_DASH_DURATION
+			velocity.x        = _parry_dash_dir * PARRY_DASH_SPEED
+		else:
+			velocity.x = lerp(velocity.x, 0.0, 0.3)
 		_up_was_pressed = input["up"]
 		return
 	if _is_juggled or state == State.HITSTUN or state == State.RESPAWNING or state == State.CROUCH:

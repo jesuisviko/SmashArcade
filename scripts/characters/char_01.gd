@@ -47,6 +47,8 @@ var _direction_hold_timer : float                    = 0.0
 var _hit_flash_timer      : float                    = 0.0
 var _flash_materials      : Array[StandardMaterial3D] = []
 var _flash_base_colors    : Array[Color]              = []
+var _parry_dash_tinted    : bool                     = false
+var _parry_dash_gray_timer: float                    = 0.0
 
 
 func _ready() -> void:
@@ -246,6 +248,20 @@ func _process_hit_flash(delta: float) -> void:
 		for i in range(_flash_materials.size()):
 			var base := _flash_base_colors[i]
 			_flash_materials[i].albedo_color = base * 1.8 if flash_on else base
+	elif _parry_dash_timer > 0.0:
+		_parry_dash_tinted    = true
+		_parry_dash_gray_timer = 0.2
+		for i in range(_flash_materials.size()):
+			_flash_materials[i].albedo_color = _flash_base_colors[i] * Color(0.25, 0.25, 0.25, 1.0)
+	elif _parry_dash_tinted:
+		_parry_dash_gray_timer -= delta
+		if _parry_dash_gray_timer > 0.0:
+			for i in range(_flash_materials.size()):
+				_flash_materials[i].albedo_color = _flash_base_colors[i] * Color(0.25, 0.25, 0.25, 1.0)
+		else:
+			_parry_dash_tinted = false
+			for i in range(_flash_materials.size()):
+				_flash_materials[i].albedo_color = _flash_base_colors[i]
 	elif _hit_flash_timer > 0.0:
 		_hit_flash_timer = 0.0
 		for i in range(_flash_materials.size()):
