@@ -26,7 +26,6 @@ SceneTransition="*res://scripts/systems/scene_transition.gd"
 
 [display]
 
-window/size/mode=3
 window/stretch/mode="canvas_items"
 
 [input]

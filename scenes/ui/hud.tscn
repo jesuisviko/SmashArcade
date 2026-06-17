@@ -51,22 +51,19 @@ text = "0%"
 
 [node name="StockIcons" type="HBoxContainer" parent="P1Panel"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 7
 
 [node name="Stock1" type="ColorRect" parent="P1Panel/StockIcons"]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
-color = Color(1, 0.85, 0, 1)
 
 [node name="Stock2" type="ColorRect" parent="P1Panel/StockIcons"]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
-color = Color(1, 0.85, 0, 1)
 
 [node name="Stock3" type="ColorRect" parent="P1Panel/StockIcons"]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
-color = Color(1, 0.85, 0, 1)
 
 [node name="P2Panel" type="VBoxContainer" parent="."]
 anchors_preset = 3
@@ -101,20 +98,17 @@ horizontal_alignment = 2
 
 [node name="StockIcons" type="HBoxContainer" parent="P2Panel"]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 7
 alignment = 2
 
 [node name="Stock1" type="ColorRect" parent="P2Panel/StockIcons"]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
-color = Color(0.2, 0.4, 1, 1)
 
 [node name="Stock2" type="ColorRect" parent="P2Panel/StockIcons"]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
-color = Color(0.2, 0.4, 1, 1)
 
 [node name="Stock3" type="ColorRect" parent="P2Panel/StockIcons"]
-custom_minimum_size = Vector2(18, 18)
+custom_minimum_size = Vector2(22, 22)
 layout_mode = 2
-color = Color(0.2, 0.4, 1, 1)

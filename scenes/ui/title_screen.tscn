@@ -10,7 +10,7 @@ script = ExtResource("1_script")
 
 [node name="Background" type="TextureRect" parent="."]
 offset_right = 1153.0
-offset_bottom = 642.0
+offset_bottom = 648.0
 texture = ExtResource("2_bg")
 expand_mode = 1
 stretch_mode = 6
@@ -28,15 +28,15 @@ stretch_mode = 5
 
 [node name="SubtitleLabel" type="Label" parent="."]
 offset_top = 419.0
-offset_right = 1155.0
-offset_bottom = 480.0
+offset_right = 1153.0
+offset_bottom = 489.0
 theme_override_colors/font_color = Color(0, 0.84952337, 0.8950924, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/line_spacing = 4
 theme_override_constants/shadow_offset_x = 4
 theme_override_constants/outline_size = 10
 theme_override_fonts/font = ExtResource("4_a4ium")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 30
 text = "Appuyez sur un bouton pour commencer"
 horizontal_alignment = 1
 

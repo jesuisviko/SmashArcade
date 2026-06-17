@@ -225,28 +225,24 @@ func _update_animation(delta: float) -> void:
 
 
 func _apply_player_color() -> void:
-	var player_color := Color(0.2, 0.4, 0.95, 1.0) if player_id == 1 else Color(0.9, 0.2, 0.2, 1.0)
-	var light_tint   := player_color.lerp(Color(1.0, 1.0, 1.0, 1.0), 0.7)
-	_apply_player_color_node($Model/char_01_final, player_color, light_tint)
+	var player_color := Color("#00d9e4") if player_id == 1 else Color(0.9, 0.2, 0.2, 1.0)
+	_apply_player_color_node($Model/char_01_final, player_color)
 	for i in range(_flash_materials.size()):
 		_flash_base_colors[i] = _flash_materials[i].albedo_color
 
 
-func _apply_player_color_node(node: Node, player_color: Color, light_tint: Color) -> void:
+func _apply_player_color_node(node: Node, player_color: Color) -> void:
 	if node is MeshInstance3D:
 		var mi       := node as MeshInstance3D
 		var is_chest := node.name.contains("chest_01")
-		if mi.mesh:
+		if mi.mesh and is_chest:
 			for s in mi.mesh.get_surface_count():
 				var mat := mi.get_surface_override_material(s) as StandardMaterial3D
 				if mat:
-					if is_chest:
-						mat.albedo_texture = null
-						mat.albedo_color   = player_color
-					else:
-						mat.albedo_color = mat.albedo_color * light_tint
+					mat.albedo_texture = null
+					mat.albedo_color   = player_color
 	for child in node.get_children():
-		_apply_player_color_node(child, player_color, light_tint)
+		_apply_player_color_node(child, player_color)
 
 
 # Collecte et pré-duplique tous les matériaux StandardMaterial3D du modèle (appelé une fois dans _ready).

@@ -16,11 +16,17 @@ var _p1_shake_timer     : float = 0.0
 var _p1_shake_intensity : float = 0.0
 var _p2_shake_timer     : float = 0.0
 var _p2_shake_intensity : float = 0.0
+var _animating_icons    : Dictionary = {}
+var _life_tweens        : Dictionary = {}
 
 
 func _ready() -> void:
 	_p1_name.add_theme_color_override("font_color", Color("#00d9e4"))
 	_p2_name.add_theme_color_override("font_color", Color(0.9, 0.2, 0.2, 1.0))
+	for icon in _p1_stocks.get_children():
+		icon.modulate = Color(0.0, 0.15, 0.45, 1.0)
+	for icon in _p2_stocks.get_children():
+		icon.modulate = Color(0.5, 0.08, 0.08, 1.0)
 
 
 func _process(delta: float) -> void:
@@ -92,7 +98,11 @@ func _refresh(id: int, dmg_label: Label, stocks_box: HBoxContainer) -> void:
 	var remaining : int  = GameManager.stocks.get(id, 0)
 	var icons     : Array = stocks_box.get_children()
 	for i : int in icons.size():
-		icons[i].visible = i < remaining
+		if not _animating_icons.has(icons[i]):
+			if id == 1:
+				icons[i].visible = i < remaining
+			else:
+				icons[i].visible = i >= (icons.size() - remaining)
 
 
 func get_percent_color(percent: float) -> Color:
@@ -111,6 +121,57 @@ func get_percent_color(percent: float) -> Color:
 		return red.lerp(dark_red, (percent - 130.0) / 40.0)
 	else:
 		return dark_red.lerp(very_dark, clamp((percent - 170.0) / 50.0, 0.0, 1.0))
+
+
+func _get_life_icon(player_id: int, life_index: int) -> Control:
+	var box : HBoxContainer = _p1_stocks if player_id == 1 else _p2_stocks
+	var children : Array = box.get_children()
+	var idx : int = life_index if player_id == 1 else (children.size() - 1) - life_index
+	if idx < 0 or idx >= children.size():
+		return null
+	return children[idx] as Control
+
+
+func lose_life(player_id: int, life_index: int) -> void:
+	# Nettoie toutes les animations de vies en cours avant d'en démarrer une nouvelle
+	for prev_icon in _animating_icons.keys():
+		if _life_tweens.has(prev_icon):
+			for t in _life_tweens[prev_icon]:
+				if is_instance_valid(t):
+					t.kill()
+		prev_icon.visible       = false
+		prev_icon.modulate.a    = 1.0
+		prev_icon.self_modulate = Color(1, 1, 1, 1)
+	_animating_icons.clear()
+	_life_tweens.clear()
+
+	var icon := _get_life_icon(player_id, life_index)
+	if not icon:
+		return
+	_animating_icons[icon] = true
+	icon.visible = true
+
+	# Fondu progressif sur 4s — cleanup à la fin
+	var fade_tween := create_tween()
+	fade_tween.tween_property(icon, "modulate:a", 0.0, 4.0)
+	fade_tween.tween_callback(func() -> void:
+		icon.visible       = false
+		icon.modulate.a    = 1.0
+		icon.self_modulate = Color(1, 1, 1, 1)
+		_animating_icons.erase(icon)
+		_life_tweens.erase(icon)
+	)
+	# Clignotement en parallèle sur 3.9s via self_modulate.a (pas visible)
+	# — évite le reflow du HBoxContainer qui causait le bug P2
+	var blink_tween := create_tween()
+	for i in range(26):
+		if i % 2 == 0:
+			blink_tween.tween_callback(func(): icon.self_modulate.a = 1.0)
+		else:
+			blink_tween.tween_callback(func(): icon.self_modulate.a = 0.0)
+		blink_tween.tween_interval(0.15)
+
+	_life_tweens[icon] = [fade_tween, blink_tween]
 
 
 func _get_passive_shake(percent: float) -> float:
