@@ -19,7 +19,7 @@ const MAX_JUMPS  := 2
 @export var weight_multiplier               := 1.0
 @export var attack_light_damage             := 5.0
 @export var attack_strong_damage            := 12.0
-@export var attack_light_knockback          := 0.5
+@export var attack_light_knockback          := 0.45
 @export var attack_strong_knockback         := 3.0
 @export var attack_duration                 := 0.2
 @export var parry_duration                  := 1.4
@@ -186,6 +186,11 @@ func _setup_debug_meshes() -> void:
 # ─── Boucle principale ───────────────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
+	if not GameManager.round_started:
+		_apply_gravity(delta)
+		move_and_slide()
+		position.z = 0.0
+		return
 	var input := InputManager.get_input(player_id)
 	_handle_attack_input(input)
 	_tick_timers(delta)

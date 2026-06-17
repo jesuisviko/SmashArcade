@@ -11,6 +11,7 @@ var selected_mode      : String     = "3_vies"
 var p1_character       : int        = 0
 var p2_character       : int        = 1
 var debug_mode_global  : bool       = false
+var round_started      : bool       = false
 
 const SPAWN_POSITIONS := {
 	1: Vector3(-3.0, 2.0, 0.0),
@@ -85,9 +86,10 @@ func respawn(player_id: int) -> void:
 
 func reset() -> void:
 	Engine.time_scale = 1.0
-	game_state = "fighting"
-	stocks     = {1: 3, 2: 3}
-	players    = {}
+	game_state    = "fighting"
+	stocks        = {1: 3, 2: 3}
+	players       = {}
+	round_started = false
 
 
 func game_over(loser_id: int) -> void:

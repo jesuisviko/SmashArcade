@@ -6,7 +6,8 @@ extends CanvasLayer
 @onready var _p2_damage : Label         = $P2Panel/DamageLabel
 @onready var _p1_stocks : HBoxContainer = $P1Panel/StockIcons
 @onready var _p2_stocks : HBoxContainer = $P2Panel/StockIcons
-@onready var _kill_feed : Label         = $KillFeedLabel
+@onready var _kill_feed  : Label         = $KillFeedLabel
+@onready var _countdown  : Label         = $CountdownLabel
 
 var _kill_feed_timer    : float = 0.0
 var _positions_captured : bool  = false
@@ -67,6 +68,15 @@ func _process(delta: float) -> void:
 		_kill_feed_timer -= delta
 		if _kill_feed_timer <= 0.0:
 			_kill_feed.visible = false
+
+
+func show_countdown(text: String) -> void:
+	_countdown.text    = text
+	_countdown.visible = true
+
+
+func hide_countdown() -> void:
+	_countdown.visible = false
 
 
 func show_kill_feed(player_id: int, remaining_stocks: int) -> void:
