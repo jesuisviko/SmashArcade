@@ -56,10 +56,10 @@ func _ready() -> void:
 	char_radius       = 0.35
 	weight_multiplier = 1.0
 	char_speed        = 4.68
-	player_id         = 1
 	super._ready()
 	_anim_player = $Model/char_01_final/AnimationPlayer
 	_collect_flash_materials($Model/char_01_final)
+	_apply_player_color()
 	# Knockbacks : buff global ×1.35 (ATTACK_AIR_UP ×2 au préalable). La croissance
 	# avec le % est gérée par CombatSystem (formule exponentielle pow 1.8).
 	_attack_configs = {
@@ -224,6 +224,31 @@ func _update_animation(delta: float) -> void:
 	_current_anim = target_anim
 
 
+func _apply_player_color() -> void:
+	var player_color := Color(0.2, 0.4, 0.95, 1.0) if player_id == 1 else Color(0.9, 0.2, 0.2, 1.0)
+	var light_tint   := player_color.lerp(Color(1.0, 1.0, 1.0, 1.0), 0.7)
+	_apply_player_color_node($Model/char_01_final, player_color, light_tint)
+	for i in range(_flash_materials.size()):
+		_flash_base_colors[i] = _flash_materials[i].albedo_color
+
+
+func _apply_player_color_node(node: Node, player_color: Color, light_tint: Color) -> void:
+	if node is MeshInstance3D:
+		var mi       := node as MeshInstance3D
+		var is_chest := node.name.contains("chest_01")
+		if mi.mesh:
+			for s in mi.mesh.get_surface_count():
+				var mat := mi.get_surface_override_material(s) as StandardMaterial3D
+				if mat:
+					if is_chest:
+						mat.albedo_texture = null
+						mat.albedo_color   = player_color
+					else:
+						mat.albedo_color = mat.albedo_color * light_tint
+	for child in node.get_children():
+		_apply_player_color_node(child, player_color, light_tint)
+
+
 # Collecte et pré-duplique tous les matériaux StandardMaterial3D du modèle (appelé une fois dans _ready).
 # La duplication évite de modifier le matériau partagé du mesh ; on garde les références pour le flash.
 func _collect_flash_materials(node: Node) -> void:
@@ -248,6 +273,12 @@ func _process_hit_flash(delta: float) -> void:
 		for i in range(_flash_materials.size()):
 			var base := _flash_base_colors[i]
 			_flash_materials[i].albedo_color = base * 1.8 if flash_on else base
+	elif state == State.RESPAWNING:
+		_hit_flash_timer += delta
+		var flash_on := int(_hit_flash_timer / HIT_FLASH_INTERVAL) % 2 == 0
+		for i in range(_flash_materials.size()):
+			var base := _flash_base_colors[i]
+			_flash_materials[i].albedo_color = base * Color(0.5, 0.7, 1.5, 1.0) if flash_on else base
 	elif _parry_dash_timer > 0.0:
 		_parry_dash_tinted    = true
 		_parry_dash_gray_timer = 0.2

@@ -137,3 +137,8 @@ func apply_hit(
 		if dx != 0.0 and dir_to_atk != target_bc.facing_direction:
 			target_bc.facing_direction  = dir_to_atk
 			target_bc._force_quick_turn = 0.1
+
+	var hud_node := get_tree().get_first_node_in_group("hud")
+	if hud_node:
+		var target_pid := int(target.get("player_id")) if target.get("player_id") != null else 0
+		hud_node.trigger_percent_shake(target_pid, clamp(knockback / 20.0, 0.0, 1.0))

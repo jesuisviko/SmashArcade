@@ -3,13 +3,14 @@
 
 extends Node
 
-var stocks        : Dictionary = {1: 3, 2: 3}
-var players       : Dictionary = {}
-var game_state    : String     = "fighting"
-var winner_id     : int        = 0
-var selected_mode : String     = "3_vies"
-var p1_character  : int        = 0
-var p2_character  : int        = 1
+var stocks             : Dictionary = {1: 3, 2: 3}
+var players            : Dictionary = {}
+var game_state         : String     = "fighting"
+var winner_id          : int        = 0
+var selected_mode      : String     = "3_vies"
+var p1_character       : int        = 0
+var p2_character       : int        = 1
+var debug_mode_global  : bool       = false
 
 const SPAWN_POSITIONS := {
 	1: Vector3(-3.0, 2.0, 0.0),

@@ -35,7 +35,8 @@ func _spawn_player(pid: int, char_id: int, start_pos: Vector3) -> CharacterBody3
 	var scene  : PackedScene  = load(path)
 	var player : CharacterBody3D = scene.instantiate()
 	player.name       = "Player" + str(pid)
-	player.debug_mode = true
+	player.player_id  = pid
+	player.debug_mode = GameManager.debug_mode_global
 	add_child(player)
 	player.global_position = start_pos
 	return player

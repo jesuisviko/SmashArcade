@@ -35,12 +35,18 @@ grow_vertical = 0
 
 [node name="NameLabel" type="Label" parent="P1Panel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 1
+theme_override_fonts/font = ExtResource("2_hqnrr")
+theme_override_font_sizes/font_size = 24
 text = "PLAYER 1"
 
 [node name="DamageLabel" type="Label" parent="P1Panel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 46
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("2_hqnrr")
+theme_override_font_sizes/font_size = 52
 text = "0%"
 
 [node name="StockIcons" type="HBoxContainer" parent="P1Panel"]
@@ -77,13 +83,19 @@ grow_vertical = 0
 
 [node name="NameLabel" type="Label" parent="P2Panel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 1
+theme_override_fonts/font = ExtResource("2_hqnrr")
+theme_override_font_sizes/font_size = 24
 text = "PLAYER 2"
 horizontal_alignment = 2
 
 [node name="DamageLabel" type="Label" parent="P2Panel"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 46
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("2_hqnrr")
+theme_override_font_sizes/font_size = 52
 text = "0%"
 horizontal_alignment = 2
 

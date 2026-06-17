@@ -46,7 +46,6 @@ var _parry_cooldown_timer : float = 0.0
 var _parry_light_hits     : int   = 0
 var _post_hitstun_grace    : float = 0.0
 var _respawn_timer         : float = 0.0
-var _blink_timer           : float = 0.0
 var _soft_drop_timer          : float = 0.0
 var _hit_delay_timer          : float = 0.0
 var _hitbox_active_timer      : float = -1.0   # < 0 = inactif
@@ -322,10 +321,6 @@ func _tick_timers(delta: float) -> void:
 
 	if state == State.RESPAWNING:
 		_respawn_timer -= delta
-		_blink_timer   -= delta
-		if _blink_timer <= 0.0:
-			_mesh.visible = not _mesh.visible
-			_blink_timer  = 0.1
 		if _respawn_timer <= 0.0:
 			_end_respawning()
 
@@ -342,7 +337,6 @@ func _end_hitstun() -> void:
 func _end_respawning() -> void:
 	is_invincible  = false
 	_respawn_timer = 0.0
-	_mesh.visible  = true
 	_set_state(State.FALL)
 
 
@@ -916,7 +910,6 @@ func start_respawn_invincibility(duration: float) -> void:
 	is_invincible       = true
 	velocity            = Vector3.ZERO
 	_respawn_timer      = duration
-	_blink_timer        = 0.1
 	combo_count         = 0
 	_combo_window_timer = 0.0
 	_freeze_timer       = 0.0
