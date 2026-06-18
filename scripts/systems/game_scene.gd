@@ -29,6 +29,7 @@ func _ready() -> void:
 	_p2.set_initial_facing(-1.0)   # P2 regarde à gauche
 	GameManager.register_player(1, _p1)
 	GameManager.register_player(2, _p2)
+	MusicManager.play_music("res://assets/sfx/Combat_music_1.mp3")
 
 
 func _process(delta: float) -> void:

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://cj0ip58gqkorp"
+path="res://.godot/imported/War Machines Theme Music (Full).mp3-21f2a64dfdb43777e03a01a7524dae13.mp3str"
+
+[deps]
+
+source_file="res://assets/sfx/War Machines Theme Music (Full).mp3"
+dest_files=["res://.godot/imported/War Machines Theme Music (Full).mp3-21f2a64dfdb43777e03a01a7524dae13.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

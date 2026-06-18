@@ -19,6 +19,7 @@ var _p2_shake_timer     : float = 0.0
 var _p2_shake_intensity : float = 0.0
 var _animating_icons    : Dictionary = {}
 var _life_tweens        : Dictionary = {}
+var _kill_feed_tween    : Tween      = null
 
 
 func _ready() -> void:
@@ -84,8 +85,14 @@ func show_kill_feed(player_id: int, remaining_stocks: int) -> void:
 		_kill_feed.text = "Joueur %d OUT ! Vies restantes : %d" % [player_id, remaining_stocks]
 	else:
 		_kill_feed.text = "Joueur %d ELIMINÉ !" % player_id
-	_kill_feed.visible  = true
-	_kill_feed_timer    = 2.0
+	_kill_feed.visible = true
+	_kill_feed_timer   = 2.0
+	if is_instance_valid(_kill_feed_tween):
+		_kill_feed_tween.kill()
+	_kill_feed_tween = create_tween()
+	for _i in range(10):
+		_kill_feed_tween.tween_interval(0.2)
+		_kill_feed_tween.tween_callback(func() -> void: _kill_feed.visible = not _kill_feed.visible)
 
 
 func trigger_percent_shake(player_id: int, intensity: float) -> void:

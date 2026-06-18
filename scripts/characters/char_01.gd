@@ -155,6 +155,18 @@ func _update_animation(delta: float) -> void:
 	if not _anim_player:
 		return
 
+	# Mode fin de partie — uniquement pour le gagnant
+	if GameManager.match_ended:
+		if player_id == GameManager.winner_id:
+			if _model_node:
+				_model_node.rotation.y = 0.0   # face caméra (tester PI si le modèle est inversé)
+			if is_on_floor() and _current_anim != "emote":
+				if _anim_player.has_animation("emote"):
+					_anim_player.get_animation("emote").loop_mode = Animation.LOOP_LINEAR
+					_anim_player.play("emote", 0.3, 1.25)
+					_current_anim = "emote"
+		return
+
 	var input := InputManager.get_input(player_id)
 	var dir   := int(input["right"]) - int(input["left"])
 

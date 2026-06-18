@@ -72,6 +72,7 @@ func apply_hit(
 
 	# 1. Accumulation des dégâts
 	target.damage_percent += damage
+	MusicManager.play_random_sfx("hit", 3)
 
 	# 2. Knockback — croissance exponentielle (pow 1.8) :
 	#    0% → ×1   |   100% → ~×3.5   |   200% → ~×7

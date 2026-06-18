@@ -17,7 +17,7 @@ const RESET_TARGET_Y   := 2.25  # cible Y en état RESETTING (= Y_OFFSET)
 const RESET_TARGET_FOV := 65.0  # cible FOV en état RESETTING
 const RESET_LERP       := 0.08  # vitesse du lerp de réinitialisation
 
-enum CamState { NORMAL, RESETTING, FOCUSING, INTRO_FOCUS }
+enum CamState { NORMAL, RESETTING, FOCUSING, INTRO_FOCUS, WINNER_FOCUS }
 var _cam_state       : int   = CamState.NORMAL
 var _focus_target          = null  # CharacterBody3D — joueur ciblé en FOCUSING
 var _focus_timer   : float = 0.0   # retour à NORMAL après 1 s sans RESPAWNING
@@ -34,6 +34,8 @@ func _process(delta: float) -> void:
 			_process_focusing(delta)
 		CamState.INTRO_FOCUS:
 			_process_intro_focus(delta)
+		CamState.WINNER_FOCUS:
+			_process_winner_focus()
 
 
 func _process_normal() -> void:
@@ -119,6 +121,15 @@ func _process_intro_focus(delta: float) -> void:
 	fov        = lerp(fov, _intro_fov_target, FOV_LERP_SPEED)
 
 
+func _process_winner_focus() -> void:
+	if not is_instance_valid(_focus_target):
+		return
+	position.x = lerp(position.x, _focus_target.global_position.x,            0.08)
+	position.y = lerp(position.y, _focus_target.global_position.y + Y_OFFSET, 0.08)
+	position.z = FIXED_Z
+	fov        = lerp(fov, FOV_MIN, FOV_LERP_SPEED)
+
+
 # ─── API publique ─────────────────────────────────────────────────────────────
 
 # Appelé à la mort d'un joueur — lerp continu vers la position centrale
@@ -140,6 +151,11 @@ func start_intro_focus(player_node: CharacterBody3D, fov_target: float = FOV_MIN
 	_focus_timer     = 1.0
 	_intro_fov_target = fov_target
 	_cam_state       = CamState.INTRO_FOCUS
+
+
+func start_winner_focus(player_node: CharacterBody3D) -> void:
+	_focus_target = player_node
+	_cam_state    = CamState.WINNER_FOCUS
 
 
 # Game over : lerp 2 s vers l'origine, snap exact, tenue 2 s

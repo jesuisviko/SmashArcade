@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://c2yin88usjext"
+path="res://.godot/imported/Punch & Impact Sound Effects.mp3-a9dc5fe2a100ed96b1273e104f08ed19.mp3str"
+
+[deps]
+
+source_file="res://assets/sfx/Punch & Impact Sound Effects.mp3"
+dest_files=["res://.godot/imported/Punch & Impact Sound Effects.mp3-a9dc5fe2a100ed96b1273e104f08ed19.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

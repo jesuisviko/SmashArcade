@@ -11,7 +11,10 @@ var selected_mode      : String     = "3_vies"
 var p1_character       : int        = 0
 var p2_character       : int        = 1
 var debug_mode_global  : bool       = false
-var round_started      : bool       = false
+var round_started           : bool       = false
+var match_ended             : bool       = false
+var sudden_death_triggered  : bool       = false
+var death_count             : Dictionary = {1: 0, 2: 0}
 
 const SPAWN_POSITIONS := {
 	1: Vector3(-3.0, 2.0, 0.0),
@@ -40,6 +43,13 @@ func player_died(player_id: int) -> void:
 	stocks[player_id] -= 1
 	if hud:
 		hud.show_kill_feed(player_id, stocks[player_id])
+	death_count[player_id] += 1
+	var death_sfx := "res://assets/sfx/death_%d.mp3" % min(death_count[player_id], 3)
+	MusicManager.play_sfx(death_sfx)
+	MusicManager.duck_volume(MusicManager.DUCK_DB)
+	if not sudden_death_triggered and stocks[1] == 1 and stocks[2] == 1:
+		sudden_death_triggered = true
+		MusicManager.crossfade_to("res://assets/sfx/sudden_death_2.mp3", 1.0, 1.0)
 	if stocks[player_id] > 0:
 		respawn(player_id)
 	else:
@@ -76,6 +86,7 @@ func respawn(player_id: int) -> void:
 	player.is_dead            = false
 	player.visible            = true
 	player.set_physics_process(true)
+	MusicManager.restore_volume(MusicManager.DUCK_DB)
 
 	# Invincibilité de respawn + focus caméra sur le joueur
 	if player.has_method("start_respawn_invincibility"):
@@ -85,20 +96,59 @@ func respawn(player_id: int) -> void:
 
 
 func reset() -> void:
-	Engine.time_scale = 1.0
-	game_state    = "fighting"
-	stocks        = {1: 3, 2: 3}
-	players       = {}
-	round_started = false
+	Engine.time_scale       = 1.0
+	game_state              = "fighting"
+	stocks                  = {1: 3, 2: 3}
+	players                 = {}
+	round_started           = false
+	match_ended             = false
+	sudden_death_triggered  = false
+	death_count             = {1: 0, 2: 0}
 
 
 func game_over(loser_id: int) -> void:
 	game_state = "game_over"
 	winner_id  = 2 if loser_id == 1 else 1
-	var cam: Camera3D = get_tree().get_first_node_in_group("camera")
-	if cam and cam.has_method("reset_to_origin"):
-		cam.reset_to_origin()
+	MusicManager.stop_music(3.0)
+
+	var cam : Camera3D = get_tree().get_first_node_in_group("camera")
+	if cam and cam.has_method("start_reset"):
+		cam.start_reset()   # recentre la caméra pendant le ralenti
+
 	Engine.time_scale = 0.2
 	await get_tree().create_timer(4.0 * Engine.time_scale).timeout
 	Engine.time_scale = 1.0
-	get_node("/root/SceneTransition").transition_to("res://scenes/ui/game_over.tscn")
+
+	var loser  : CharacterBody3D = players.get(loser_id)
+	var winner : CharacterBody3D = players.get(winner_id)
+
+	if is_instance_valid(loser):
+		loser.visible = false
+		loser.set_physics_process(false)
+		loser.set_collision_layer(0)
+		loser.set_collision_mask(0)
+
+	var bg = get_tree().get_first_node_in_group("background")
+	if is_instance_valid(bg) and bg is Sprite3D:
+		bg.texture = load("res://assets/textures/maps/map_01_bg1.png")
+
+	if is_instance_valid(winner):
+		winner.global_position = Vector3(0.0, 3.0, 0.0)
+		winner.velocity        = Vector3.ZERO
+	MusicManager.play_music("res://assets/sfx/win_music.mp3", 1.0)
+
+	match_ended = true   # après téléportation — déclenche rotation + emote dans _update_animation
+
+	var hud = get_tree().get_first_node_in_group("hud")
+	if is_instance_valid(hud):
+		hud.visible = false
+	var dbg = get_tree().get_first_node_in_group("debug_overlay")
+	if is_instance_valid(dbg):
+		dbg.visible = false
+
+	if cam and cam.has_method("start_winner_focus"):
+		cam.start_winner_focus(winner)
+
+	var ui = get_tree().get_first_node_in_group("game_over_ui")
+	if ui and ui.has_method("show_result"):
+		ui.show_result(winner_id)

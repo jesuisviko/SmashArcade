@@ -19,6 +19,7 @@ const DOUBLE_PARRY_WINDOW := 1.0
 
 
 func _ready() -> void:
+	MusicManager.stop_music(2.0)
 	_p1_ready_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.6))
 	_p2_ready_label.add_theme_color_override("font_color", Color(0.6, 0.6, 1.0))
 	_debug_label            = Label.new()
@@ -36,10 +37,12 @@ func _process(delta: float) -> void:
 		_p1_ready = true
 		_p1_ready_label.text = "P1 : PRÊT  ✓"
 		_p1_ready_label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5))
+		MusicManager.play_sfx("res://assets/sfx/buttonclickrelease.mp3")
 	if not _p2_ready and Input.is_action_just_pressed("p2_attack_light"):
 		_p2_ready = true
 		_p2_ready_label.text = "P2 : PRÊT  ✓"
 		_p2_ready_label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5))
+		MusicManager.play_sfx("res://assets/sfx/buttonclickrelease.mp3")
 	if _p1_ready and _p2_ready:
 		get_node("/root/SceneTransition").transition_to(SCENE_NEXT)
 

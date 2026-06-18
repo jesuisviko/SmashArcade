@@ -47,6 +47,7 @@ var _parry_light_hits     : int   = 0
 var _post_hitstun_grace    : float = 0.0
 var _respawn_timer         : float = 0.0
 var _soft_drop_timer          : float = 0.0
+var _crouch_timer             : float = 0.0
 var _hit_delay_timer          : float = 0.0
 var _hitbox_active_timer      : float = -1.0   # < 0 = inactif
 var _strong_extra_cooldown    : float = 0.0
@@ -186,6 +187,11 @@ func _setup_debug_meshes() -> void:
 # ─── Boucle principale ───────────────────────────────────────────────────────
 
 func _physics_process(delta: float) -> void:
+	if GameManager.match_ended:
+		_apply_gravity(delta)
+		move_and_slide()
+		position.z = 0.0
+		return
 	if not GameManager.round_started:
 		_apply_gravity(delta)
 		move_and_slide()
@@ -234,6 +240,9 @@ func _tick_timers(delta: float) -> void:
 
 	if _soft_drop_timer > 0.0:
 		_soft_drop_timer -= delta
+
+	if state == State.CROUCH:
+		_crouch_timer += delta
 
 	if _turn_timer > 0.0:
 		_turn_timer -= delta
@@ -395,10 +404,20 @@ func _handle_attack_input(input: Dictionary) -> void:
 		_parry_timer      = parry_duration
 		_parry_light_hits = 0
 		_parry_dash_used  = false
+		MusicManager.play_random_sfx("parry", 2)
 
 
 func _start_attack(new_state: State) -> void:
 	_set_state(new_state)
+	match new_state:
+		State.ATTACK_LIGHT, State.ATTACK_AIR_LIGHT:
+			MusicManager.play_random_sfx("light", 3)
+		State.ATTACK_STRONG, State.ATTACK_AIR_STRONG:
+			_play_heavy_sfx_delayed()
+		State.ATTACK_UP, State.ATTACK_AIR_UP:
+			MusicManager.play_random_sfx("air", 3)
+		State.ATTACK_DOWN, State.ATTACK_AIR_DOWN:
+			MusicManager.play_random_sfx("down", 2)
 	_attack_started_on_floor  = is_on_floor()
 	_active_attack_config     = {}
 	_hit_delay_timer          = 0.0
@@ -637,7 +656,13 @@ func _apply_movement(input: Dictionary, delta: float) -> void:
 			velocity.x = lerp(velocity.x, 0.0, 0.3)
 		_up_was_pressed = input["up"]
 		return
-	if _is_juggled or state == State.HITSTUN or state == State.RESPAWNING or state == State.CROUCH:
+	if state == State.CROUCH and is_on_floor():
+		if _crouch_timer >= 0.5:
+			velocity.x      = lerp(velocity.x, 0.0, 0.3)
+			_up_was_pressed = input["up"]
+			return
+		# < 0.5s : laisse passer vers la logique de mouvement normale
+	if _is_juggled or state == State.HITSTUN or state == State.RESPAWNING:
 		_up_was_pressed = input["up"]
 		return
 	# Attaques aériennes : mouvement latéral réduit à 35% sauf ATTACK_AIR_DOWN (figé)
@@ -731,6 +756,8 @@ func _update_state(input: Dictionary) -> void:
 		new_state = State.JUMP if velocity.y > 0.0 else State.FALL
 	# Retour au sol : réarme les attaques aériennes pour le prochain saut
 	if is_on_floor() and (new_state == State.IDLE or new_state == State.RUN):
+		if state == State.JUMP or state == State.FALL:
+			MusicManager.play_random_sfx("land", 3)
 		_air_up_used    = false
 		_air_down_used  = false
 		_attack_up_count = 0
@@ -877,11 +904,17 @@ func jump() -> void:
 	velocity.y = JUMP_SPEED
 	jumps_left -= 1
 	_set_state(State.JUMP)
+	MusicManager.play_random_sfx("jump", 4)
 	_on_jump()
 
 
 func _on_jump() -> void:
 	pass   # hook virtuel — override dans les sous-classes
+
+
+func _play_heavy_sfx_delayed() -> void:
+	await get_tree().create_timer(0.15).timeout
+	MusicManager.play_random_sfx("heavy", 3)
 
 
 # Appelé par combat_system — gèle le personnage puis le lance à expiration de _freeze_timer
@@ -940,6 +973,7 @@ func _start_crouch(prev_state: State) -> void:
 
 
 func _end_crouch() -> void:
+	_crouch_timer       = 0.0
 	var cap             := _col_shape.shape as CapsuleShape3D
 	cap.height          = char_height
 	_col_shape.position = Vector3(0.0, char_height / 2.0, 0.0)

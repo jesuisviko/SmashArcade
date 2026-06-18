@@ -46,24 +46,38 @@ func _process(delta: float) -> void:
 		p1_idx        = max(0, p1_idx - 1)
 		_p1_confirmed = false
 		_update_splashes()
+		MusicManager.play_sfx("res://assets/sfx/buttonrollover.mp3")
 	elif Input.is_action_just_pressed("p1_right"):
 		p1_idx        = min(3, p1_idx + 1)
 		_p1_confirmed = false
 		_update_splashes()
+		MusicManager.play_sfx("res://assets/sfx/buttonrollover.mp3")
 	if Input.is_action_just_pressed("p1_attack_light"):
+		var was_confirmed := _p1_confirmed
 		_p1_confirmed = not _p1_confirmed
+		if _p1_confirmed:
+			MusicManager.play_sfx("res://assets/sfx/buttonclickrelease.mp3")
+		else:
+			MusicManager.play_sfx("res://assets/sfx/buttonrollover.mp3")
 
 	# P2 navigation
 	if Input.is_action_just_pressed("p2_left"):
 		p2_idx        = max(0, p2_idx - 1)
 		_p2_confirmed = false
 		_update_splashes()
+		MusicManager.play_sfx("res://assets/sfx/buttonrollover.mp3")
 	elif Input.is_action_just_pressed("p2_right"):
 		p2_idx        = min(3, p2_idx + 1)
 		_p2_confirmed = false
 		_update_splashes()
+		MusicManager.play_sfx("res://assets/sfx/buttonrollover.mp3")
 	if Input.is_action_just_pressed("p2_attack_light"):
+		var was_confirmed := _p2_confirmed
 		_p2_confirmed = not _p2_confirmed
+		if _p2_confirmed:
+			MusicManager.play_sfx("res://assets/sfx/buttonclickrelease.mp3")
+		else:
+			MusicManager.play_sfx("res://assets/sfx/buttonrollover.mp3")
 
 	# Blink timer
 	_blink_timer -= delta

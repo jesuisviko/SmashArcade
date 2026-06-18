@@ -30,10 +30,13 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("p1_left") or Input.is_action_just_pressed("p2_left"):
 		_selected    = max(0, _selected - 1)
 		_pulse_timer = 0.0
+		MusicManager.play_sfx("res://assets/sfx/buttonrollover.mp3")
 	if Input.is_action_just_pressed("p1_right") or Input.is_action_just_pressed("p2_right"):
 		_selected    = min(2, _selected + 1)
 		_pulse_timer = 0.0
+		MusicManager.play_sfx("res://assets/sfx/buttonrollover.mp3")
 	if Input.is_action_just_pressed("p1_attack_light") or Input.is_action_just_pressed("p2_attack_light"):
 		if _selected == 0:
+			MusicManager.play_sfx("res://assets/sfx/buttonclickrelease.mp3")
 			GameManager.selected_mode = MODES[0]
 			get_node("/root/SceneTransition").transition_to(SCENE_NEXT)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://enc7n8w2j4hb"]
+[gd_scene load_steps=12 format=3 uid="uid://enc7n8w2j4hb"]
 
 [ext_resource type="PackedScene" uid="uid://cgvtoqoyovu4y" path="res://scenes/characters/base_character.tscn" id="1_char"]
 [ext_resource type="Script" uid="uid://lb7iqseesw74" path="res://scripts/systems/game_scene.gd" id="2_game_scene"]
@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://ev81vkhmb0lw" path="res://assets/textures/maps/map_01_bg.png" id="7_bg"]
 [ext_resource type="PackedScene" path="res://scenes/ui/debug_overlay.tscn" id="8_dbg"]
 [ext_resource type="Script" path="res://scripts/effects/effects_manager.gd" id="9_efx"]
+[ext_resource type="Script" path="res://scripts/ui/game_over_ui.gd" id="10_go_ui"]
 
 [sub_resource type="Environment" id="Environment_1"]
 ambient_light_source = 2
@@ -45,9 +46,12 @@ debug_mode = true
 [node name="EffectsManager" type="Node" parent="."]
 script = ExtResource("9_efx")
 
-[node name="DebugOverlay" parent="." instance=ExtResource("8_dbg")]
+[node name="DebugOverlay" parent="." instance=ExtResource("8_dbg") groups=["debug_overlay"]]
 
-[node name="BackgroundImage" type="Sprite3D" parent="."]
+[node name="BackgroundImage" type="Sprite3D" parent="." groups=["background"]]
 transform = Transform3D(4.646, 0, 0, 0, 4.646, 0, 0, 0, 1, 0, -1.0, -15)
 texture = ExtResource("7_bg")
 script = ExtResource("6_parallax")
+
+[node name="GameOverUI" type="CanvasLayer" parent="." groups=["game_over_ui"]]
+script = ExtResource("10_go_ui")

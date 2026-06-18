@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://lrgw0vrohak5"
+path="res://.godot/imported/Anime Fury ThemeMusic.mp3-184c1c308f68da24ceacbc17e983b1b5.mp3str"
+
+[deps]
+
+source_file="res://assets/sfx/Anime Fury ThemeMusic.mp3"
+dest_files=["res://.godot/imported/Anime Fury ThemeMusic.mp3-184c1c308f68da24ceacbc17e983b1b5.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

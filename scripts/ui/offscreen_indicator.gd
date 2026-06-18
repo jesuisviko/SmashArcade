@@ -26,7 +26,9 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if not GameManager.round_started:
+	if not GameManager.round_started or GameManager.game_state != "fighting":
+		for pid in [1, 2]:
+			_rects[pid].visible = false
 		return
 	if not is_instance_valid(_camera):
 		_camera = get_tree().get_first_node_in_group("camera") as Camera3D

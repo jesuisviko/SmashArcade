@@ -4,6 +4,7 @@ var _pulse_timer : float = 0.0
 
 func _ready() -> void:
 	$SubtitleLabel.pivot_offset = $SubtitleLabel.size / 2
+	MusicManager.play_music("res://assets/sfx/main_menu_theme.mp3")
 
 func _process(delta: float) -> void:
 	_pulse_timer += delta
@@ -11,6 +12,7 @@ func _process(delta: float) -> void:
 	$SubtitleLabel.scale = Vector2(s, s)
 
 	if _any_button_just_pressed():
+		MusicManager.play_sfx("res://assets/sfx/buttonclickrelease.mp3")
 		get_node("/root/SceneTransition").transition_to("res://scenes/ui/mode_select.tscn")
 
 func _any_button_just_pressed() -> bool:
