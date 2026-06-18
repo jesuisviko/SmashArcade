@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c3gf6h41xui0r"
-path="res://.godot/imported/haut_P2.png-c1f5c10404140f9fef84ea03d0f6d7a5.ctex"
+uid="uid://3cwcjls37odx"
+path="res://.godot/imported/haut_P1.png-5b90419e1cb29b3bdd2a7ef2f1a7feb9.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/textures/ui/provisoire/haut_P2.png"
-dest_files=["res://.godot/imported/haut_P2.png-c1f5c10404140f9fef84ea03d0f6d7a5.ctex"]
+source_file="res://assets/textures/ui/haut_P1.png"
+dest_files=["res://.godot/imported/haut_P1.png-5b90419e1cb29b3bdd2a7ef2f1a7feb9.ctex"]
 
 [params]
 

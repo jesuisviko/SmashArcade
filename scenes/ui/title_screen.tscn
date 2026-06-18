@@ -17,11 +17,11 @@ stretch_mode = 6
 
 [node name="Logo" type="TextureRect" parent="."]
 unique_name_in_owner = true
-offset_left = 74.0
-offset_top = 85.00001
-offset_right = 2246.0
-offset_bottom = 809.0
-rotation = -0.05235988
+offset_left = 78.0
+offset_top = 92.0
+offset_right = 2249.3193
+offset_bottom = 838.1045
+rotation = -0.06981317
 scale = Vector2(0.45, 0.45)
 texture = ExtResource("3_logo")
 stretch_mode = 5
